@@ -6,7 +6,6 @@
   python build_video.py video   # 片段预渲染 + 转场合成 + 音画混流
   python build_video.py all     # 全部
 """
-import asyncio
 import json
 import subprocess
 import sys
@@ -14,7 +13,7 @@ import tempfile
 import wave
 from pathlib import Path
 
-import edge_tts
+import tts_engine
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -50,16 +49,8 @@ def ffmpeg(*args):
 
 # ───────────────────────── 配音 ─────────────────────────
 def gen_tts():
-    async def run():
-        for sh in shots.SHOTS:
-            out = D_SEG / (sh["n"] + ".mp3")
-            if out.exists() and out.stat().st_size > 2000:
-                continue
-            txt = shots.NARR[sh["n"]]
-            await edge_tts.Communicate(txt, shots.VOICE, rate=shots.RATE).save(str(out))
-            print("  tts", sh["n"], out.stat().st_size, "bytes")
-    asyncio.run(run())
-    return [ffprobe_duration(D_SEG / (s["n"] + ".mp3")) for s in shots.SHOTS]
+    """v2：语义分句 + 静音裁剪 + 可控停顿 + 发音校正。"""
+    return tts_engine.generate_all(shots, D_SEG, TMP)
 
 
 def build_timeline(vo_durs):
@@ -173,7 +164,7 @@ ScaledBorderAndShadow: yes
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Sub,Microsoft YaHei,38,&H00FFFFFF,&H000000FF,&H80202818,&H00000000,-1,0,0,0,100,100,0,0,3,8,0,2,70,70,50,1
 Style: Badge,Microsoft YaHei,25,&H00232820,&H000000FF,&H00F1F6F7,&H80000000,0,0,0,0,100,100,0,0,3,7,0,9,40,40,46,1
-Style: Chapter,Microsoft YaHei,34,&H00232820,&H000000FF,&H00F1F6F7,&H80000000,-1,0,0,0,100,100,0,0,3,9,0,7,40,40,46,1
+Style: Chapter,Microsoft YaHei,34,&H00232820,&H000000FF,&H00F1F6F7,&H80000000,-1,0,0,0,100,100,0,0,3,9,0,8,40,40,46,1
 Style: End,Microsoft YaHei,30,&H00232820,&H000000FF,&H00F1F6F7,&H80000000,-1,0,0,0,100,100,0,0,3,12,0,5,60,60,40,1
 
 [Events]
@@ -190,6 +181,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             ev.append("Dialogue: 0,%s,%s,Badge,,0,0,0,,{\\fad(300,300)}%s" %
                       (ass_time(bs), ass_time(be), it["badge"]))
     for label, sid in shots.CHAPTERS:
+        sh = next(s for s in shots.SHOTS if s["id"] == sid)
+        if sh.get("no_chapter"):
+            continue   # 该镜头画面自带章节标题，避免角标叠字
         it = next(x for x in items if x["id"] == sid)
         ev.append("Dialogue: 0,%s,%s,Chapter,,0,0,0,,{\\fad(350,350)}%s" %
                   (ass_time(it["start"] + 0.1), ass_time(it["start"] + 3.6), label))
@@ -216,11 +210,12 @@ def gen_docs(items, total):
         return ""
 
     # 视频脚本
-    L = ["# 《耕年 · 立体年鉴》推广片 · 视频脚本", "",
+    L = ["# 《耕年 · 立体年鉴》推广片 · 视频脚本（v2 重录版）", "",
          "- 成片规格：%d×%d / %d fps / H.264 + AAC" % (shots.W, shots.H, shots.FPS),
          "- 片长：**%s（%.1f 秒）**" % (tc(total), total),
-         "- 配音：`zh-CN-YunyangNeural` 男声、正常语速（rate +0%），沉稳播报",
-         "- 字幕：中文，逐字取自配音文稿；片尾另含来源与模型标识说明",
+         "- 配音：`zh-CN-YunyangNeural` 男声、正常语速（rate +0%），沉稳播报；v2 采用语义分句与可控停顿，详见 `03_配音/发音与断句校正表.md`",
+         "- 字幕：中文，逐字取自配音文稿；片尾含 #WorkBuddy #Hy4 与模型选择说明",
+         "- 活动合规：S04B 整屏展示模型已选择为 Hy4 的创作过程截图，见 `08_活动核验/`",
          "- 画面：全部为本项目真实运行的截图与录屏（含裁切排版），未使用素材库画面",
          "- 时间码为**成片实测时间轴**，已计入转场重叠；配音起点 = 字幕起点", "",
          "> 转场列表示「本镜头 → 下一镜头」的类型与时长。", ""]
@@ -280,13 +275,66 @@ def gen_docs(items, total):
                   it["trans"], it["tdur"], reasons[it["trans"]]))
     T += ["", "## 节奏曲线", "",
           "- 序章（%s）：4 镜，慢起，先给效果再给全貌。" % chapter_of("S01"),
-          "- 创作过程（5 镜）：以溶解为主，讲取舍与两次真实数据暴露的问题。",
+          "- 创作过程（6 镜）：开头 S04B 以纸白闪切进入模型选择核验截图，其后以溶解为主，讲取舍与两次真实数据暴露的问题。",
           "- 项目成果（13 镜）：节奏最快，0.40 秒横推串联视角、形态与功能，中段插入 4 段实拍录屏。",
           "- 使用体验（4 镜）：降速，0.50–0.90 秒转场，末尾 6 秒留给片尾信息卡。", ""]
     (D_DOC / "转场说明.md").write_text("\n".join(T), encoding="utf-8")
 
     TIMELINE_JSON.write_text(json.dumps(dict(total=total, shots=items),
                                         ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+
+def gen_pronunciation_doc():
+    """输出本次重录的断句与发音校正依据，供人工核验。"""
+    rows = []
+    total_groups = 0
+    for sh in shots.SHOTS:
+        groups = tts_engine.split_groups(shots.NARR[sh["n"]])
+        total_groups += len(groups)
+        tts_text = [tts_engine.apply_pronunciation(g) for g, _ in groups]
+        changed = any(a != b for a, b in zip([g for g, _ in groups], tts_text))
+        rows.append("| %s | %d | %s |" %
+                    (sh["n"], len(groups), "是（含发音替换）" if changed else "否"))
+    L = [
+        "# 发音与断句校正表（v2 重录版）", "",
+        "## 1. 断句", "",
+        "v1 把整句一次性交给 TTS，句内停顿由模型自行决定；每段 MP3 还自带首尾静音，",
+        "拼接后停顿忽长忽短。v2 的处理：", "",
+        "1. 按标点把每句切成原子片段，再合并为约 20–35 字的**语义呼吸组**；遇 `。！？；` 立即成组，不跨句连读。",
+        "2. 每组单独合成，随后裁掉 TTS 自带首尾静音（阈值 −45 dB，两端各留 25 ms，5 ms 淡入淡出防爆音）。",
+        "3. 按组尾标点插入固定停顿：`、`110 ms，`，`150 ms，`：200 ms，`；`240 ms，`。！？`320 ms。",
+        "4. 镜头之间的段落停顿由时间轴的 `lead/tail` 控制，与句内停顿分级，避免同级停顿造成的断裂感。", "",
+        "全片共 %d 个镜头、%d 个语义呼吸组；字幕仍按整句显示，与配音逐字一致。" %
+        (len(shots.SHOTS), total_groups), "",
+        "## 2. 多音字校正", "",
+        "**只对送进 TTS 的文本做同音替换；文稿、字幕、脚本中的汉字保持正确写法。**", "",
+        "| 原文 | TTS 输入 | 目标读音 | 原因 |", "| --- | --- | --- | --- |",
+        "| 一行（N19「渲染层一行不用改」） | 一航 | **yì háng** | 「航」只有 háng 一个读音，从构造上排除 yì xíng；此处指**一行代码／代码行** |",
+        "| 七行（N01「五十三列、七行」） | 七航 | qī háng | 网格行数，同样排除 xíng |",
+        "| 重设计 → 重新做了 3D 设计（N10） | 原文改写 | chóng | 消除「重」chóng / zhòng 歧义，文稿与字幕同步更新 |",
+        "| 重算 → 同步重新计算（N17） | 原文改写 | chóng | 同上 |", "",
+        "其余多音字（长出来 zhǎng / 最长 cháng / 相机 xiàng / 相同 xiāng / 命中 zhòng / 调到 tiáo / 数据 shù）",
+        "经逐句核查保持常见语境读音，未做替换，避免同音替换引入新的歧义。", "",
+        "## 3. 人工核验素材", "",
+        "- `03_配音/发音校正对比试听/一行-未校正-YiXing.mp3`：以原文「渲染层一行不用改」合成。",
+        "- `03_配音/发音校正对比试听/一行-已校正-YiHang.mp3`：以「渲染层一航不用改」合成，成片使用此读音。",
+        "- `03_配音/配音-全片-男声.mp3`：全片重录音轨，N19 处可直接听「一行」。", "",
+        "### ASR 客观核验（2026-11-07 实测）", "",
+        "用语音转写工具对三段音频做识别，结果如下：", "",
+        "| 音频 | ASR 转写 | 判定 |", "| --- | --- | --- |",
+        "| `一行-未校正-YiXing.mp3` | 渲染层**异形**不用改。 | 证实 v1 读音为 yì **xíng**（错误） |",
+        "| `一行-已校正-YiHang.mp3` | 渲染层**一行**不用改。 | 校正后听感为短语「一行」，非「异形」 |",
+        "| `逐段/N19.mp3`（成片实际音轨） | 最后是自定义账号……渲染层**一行**不用改。 | 成片使用的是校正后的读音 |",
+        "| `06_成片/…推广片.mp4` 161–172 s 音轨切片 | 最后是自定义账号……渲染层**一行**不用改。 | **最终成片**使用的是校正后的读音 |",
+        "",
+        "说明：ASR 会把同音音节映射回上下文最可能的汉字，因此转写结果本身不能区分 háng / xíng；",
+        "真正的保证来自构造——TTS 输入中的「航」**只有 háng 一个读音**，",
+        "而「未校正」样本被识别成「异形」则反向证明了原读法确实是 xíng。", "",
+        "## 4. 逐镜头分句数", "",
+        "| 镜头 | 呼吸组数 | TTS 文本是否与字幕不同 |", "| --- | --- | --- |",
+    ] + rows + [""]
+    (D_VOICE / "发音与断句校正表.md").write_text("\n".join(L), encoding="utf-8")
 
 
 # ───────────────────────── 成片 ─────────────────────────
@@ -351,7 +399,9 @@ def main():
     voice_wav = build_audio(items, total)
     gen_subtitles(items, total)
     gen_docs(items, total)
-    print("  tts / subtitles / docs done")
+    gen_pronunciation_doc()
+    tts_engine.generate_comparison(D_VOICE / "发音校正对比试听", shots.VOICE)
+    print("  tts / subtitles / docs / pronunciation notes done")
     if mode in ("video", "all"):
         segs = render_segments(items)
         assemble(items, total, segs, voice_wav)

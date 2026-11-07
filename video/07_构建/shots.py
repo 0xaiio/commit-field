@@ -20,8 +20,8 @@ W, H, FPS = 1600, 900, 24         # 成片规格
 
 def narration():
     s = DOC.read_text(encoding="utf-8")
-    rows = re.findall(r"^(N\d{2})｜(.+)$", s, re.M)
-    assert len(rows) == 26, "旁白段数应为 26，实际 %d" % len(rows)
+    rows = re.findall(r"^(N\d{2}[A-Z]?)｜(.+)$", s, re.M)
+    assert len(rows) == 27, "旁白段数应为 27，实际 %d" % len(rows)
     return dict(rows)
 
 
@@ -43,6 +43,10 @@ SHOTS = [
          visual="首页整体：标题、五张统计卡、来源行、控制条、3D 视口", focus="作品全貌与真实数据标注",
          trans="fadewhite", tdur=0.90, lead=0.35, tail=1.35, badge=""),
 
+    dict(id="S04B", n="N04B", asset="S04B_hy4_model.jpg", chapter="一 · 创作过程",
+         visual="创作过程客户端截图：产物文件卡片与底部工具栏的 Hy4 模型标签", focus="模型已选择为 Hy4 · 活动合规核验",
+         trans="fade", tdur=0.45, lead=0.35, tail=1.20,
+         badge="", no_chapter=True),
     dict(id="S05", n="N05", asset="S05_2d_record.jpg", chapter="一 · 创作过程",
          visual="2D 对照版记录面，格子和月份轴", focus="第一版的起点",
          trans="fade", tdur=0.45, lead=0.35, tail=0.60, badge=""),
@@ -119,14 +123,14 @@ SHOTS = [
          trans="fade", tdur=0.50, lead=0.40, tail=6.00, badge=""),
 ]
 
-assert len(SHOTS) == 26
+assert len(SHOTS) == 27
 assert all(s["n"] in NARR for s in SHOTS)
 assert all(s["tail"] >= s["tdur"] + 0.15 for s in SHOTS[:-1]), \
     "配音后留白必须覆盖该镜头到下一镜头的转场时长"
 
 CHAPTERS = [
     ("序章 · 看效果", "S01"),
-    ("一 · 创作过程", "S05"),
+    ("一 · 创作过程", "S04B"),
     ("二 · 项目成果", "S10"),
     ("三 · 使用体验", "S23"),
 ]
@@ -134,6 +138,7 @@ CHAPTERS = [
 END_CARD = [
     "耕年 · 立体年鉴",
     "github.com/0xaiio/commit-field   ·   MIT",
+    "#WorkBuddy  #Hy4",
     "画面均为项目真实运行截图与录屏（经裁切排版），未使用素材库画面",
-    "模型标识请在客户端确认；本片不陈述模型参数与评测成绩",
+    "模型选择见创作过程截图（Hy4）；本片不陈述模型参数与评测成绩",
 ]
