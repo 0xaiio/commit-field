@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>耕年 3D · THE CULTIVATED YEAR — 可环绕的立体年鉴</title>
+<style>
+:root{
+  --paper:#f7f6f1; --card:#fffefa; --ink:#202823; --ink2:#5b6860; --ink3:#8d978f;
+  --line:#e2e3da; --gold:#d6a94c; --water:#e3b955; --act:#5d8a68;
+  --l0:#eae8de; --l1:#bcd9ac; --l2:#8ac27c; --l3:#4f9c60; --l4:#256b40;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.7;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1260px;margin:0 auto;padding:0 24px 70px}
+a{color:var(--ink2)}
+
+/* ── 展签 ── */
+.mast{padding:40px 0 24px;border-bottom:1px solid var(--line)}
+.plate{display:inline-flex;align-items:center;gap:9px;font:600 10.5px/1 var(--mono);letter-spacing:.14em;
+  color:var(--ink2);border:1px solid var(--line);background:var(--card);border-radius:3px;padding:7px 11px}
+.plate i{width:6px;height:6px;border-radius:50%;background:var(--gold);font-style:normal}
+.mast h1{margin:18px 0 2px;font-size:clamp(32px,5vw,56px);font-weight:800;letter-spacing:-.04em;line-height:1.12}
+.mast .en{font:500 11.5px/1.5 var(--mono);letter-spacing:.2em;color:var(--ink3)}
+.source{margin-top:9px;font:500 11px/1.7 var(--mono);color:var(--ink3);letter-spacing:.02em}
+.source b{color:var(--act);font-weight:700}
+.thesis{margin:16px 0 0;font-size:clamp(14px,1.6vw,17px);color:var(--ink2);line-height:1.9;max-width:850px}
+.thesis b{color:var(--ink);border-bottom:2px solid var(--gold);padding-bottom:2px;font-weight:750}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:22px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:12px 15px}
+.stat b{display:block;font:800 24px/1.15 var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+.stat span{display:block;font-size:11px;color:var(--ink3);margin-top:3px}
+.stat.gold b{color:#a67920}
+
+/* ── 控制条 ── */
+.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px;padding:12px 15px;
+  background:var(--card);border:1px solid var(--line);border-radius:12px}
+.btn{font:600 12px/1 var(--mono);color:var(--ink);background:var(--card);border:1px solid var(--line);
+  border-radius:8px;padding:9px 12px;cursor:pointer;transition:.16s;white-space:nowrap}
+.btn:hover{border-color:var(--ink3);background:#fff}
+.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.primary:hover{background:#35443a}
+.btn.on{background:#2f7a4b;color:#fff;border-color:#2f7a4b}
+.sep{width:1px;height:24px;background:var(--line)}
+.timeline{display:flex;align-items:center;gap:10px;flex:1;min-width:220px}
+.timeline label{font:600 10.5px/1 var(--mono);letter-spacing:.09em;color:var(--ink3);white-space:nowrap}
+input[type=range]{flex:1;min-width:90px;accent-color:var(--act)}
+.week{font:700 12px/1 var(--mono);color:var(--ink);min-width:56px;text-align:right;font-variant-numeric:tabular-nums}
+.acts,.viewbtns{display:flex;gap:5px}
+.acts{margin-left:auto}
+.act,.viewbtn,.srcsw button{font:600 10.5px/1 var(--mono);color:var(--ink2);background:var(--card);
+  border:1px solid var(--line);border-radius:999px;padding:7px 11px;cursor:pointer;white-space:nowrap;transition:.16s}
+.act:hover,.viewbtn:hover,.srcsw button:hover{border-color:var(--ink3)}
+.act.on,.viewbtn.on,.srcsw button.on{color:#fff;border-color:transparent;background:#2f7a4b}
+.viewbtn.on{background:var(--ink)}
+.srcsw{display:flex;align-items:center;gap:5px}
+.srcsw span{font:600 10.5px/1 var(--mono);color:var(--ink3);margin-right:2px;letter-spacing:.08em}
+.srcsw button{border-radius:7px;padding:8px 10px}
+
+/* ── 舞台 ── */
+.stage{margin-top:18px;background:#eef2ea;border:1px solid var(--line);border-radius:16px;
+  padding:18px 18px 16px;transition:background 1.1s ease;box-shadow:0 8px 26px rgba(30,45,35,.05)}
+.stage-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.stage-h b{font-size:14px;font-weight:800}
+.stage-h .now{font:600 11px/1.4 var(--mono);color:var(--act);letter-spacing:.06em}
+.stage-h .hint{margin-left:auto;font-size:11px;color:var(--ink3)}
+.actbar{position:relative;height:20px;margin-bottom:10px;border-radius:5px;overflow:hidden;display:flex}
+.actbar div{flex:1;display:flex;align-items:center;justify-content:center;font:600 9.5px/1 var(--mono);
+  letter-spacing:.1em;color:rgba(30,45,35,.62);border-right:1px solid rgba(255,255,255,.5)}
+.actbar div:last-child{border-right:none}
+.actbar .cursor{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);opacity:.55;
+  transition:left .16s linear;pointer-events:none}
+
+/* 3D 视口 */
+.viewport{position:relative;height:440px;border-radius:12px;overflow:hidden;cursor:grab;
+  border:1px solid rgba(60,80,65,.14);
+  background:radial-gradient(ellipse 75% 60% at 50% 34%,#fbfcf7 0%,#eef1e7 58%,#e2e7dc 100%)}
+.viewport:active{cursor:grabbing}
+#scene{display:block;width:100%;height:100%;touch-action:none}
+.hud{position:absolute;pointer-events:none;font:600 10.5px/1.6 var(--mono);letter-spacing:.06em;color:#5b6860}
+.hud.tl{top:13px;left:15px}
+.hud.tl b{display:block;font-size:13px;color:var(--ink);letter-spacing:.02em}
+.hud.tr{top:13px;right:15px;text-align:right;color:#7b867c}
+.hud.bl{bottom:13px;left:15px;color:#7b867c}
+.hud.br{bottom:13px;right:15px;text-align:right;color:#a67920}
+.peak-card{position:absolute;pointer-events:none;top:52px;right:15px;background:rgba(255,254,248,.92);
+  border:1px solid rgba(214,169,76,.55);border-radius:9px;padding:8px 11px;
+  font:600 10.5px/1.6 var(--mono);color:#8a6520;box-shadow:0 4px 16px rgba(120,95,40,.12);
+  transition:opacity .4s ease}
+.peak-card b{display:block;font-size:17px;color:#a67920;font-variant-numeric:tabular-nums}
+.fps{position:absolute;bottom:13px;left:50%;transform:translateX(-50%);pointer-events:none;
+  font:600 9.5px/1 var(--mono);color:#9aa59a;letter-spacing:.08em}
+
+.legend{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:12px;font-size:11px;color:var(--ink3)}
+.legend .sw{display:inline-block;width:12px;height:12px;border-radius:2px;border:1px solid rgba(40,60,45,.08)}
+.legend .keys{display:flex;gap:5px;align-items:center}
+.legend .dikekey{width:20px;height:2px;background:var(--water);border-radius:2px}
+.legend .fogkey{width:20px;height:10px;background:rgba(255,255,255,.7);border:1px solid var(--line)}
+
+/* ── 分层功能 UI ── */
+.controls.secondary{margin-top:8px;gap:8px;padding:9px 15px;background:var(--card)}
+.cgroup{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.cgroup>span{font:600 10px/1 var(--mono);color:var(--ink3);margin-right:2px;letter-spacing:.08em}
+.mini{font:600 10.5px/1 var(--mono);color:var(--ink2);background:var(--card);
+  border:1px solid var(--line);border-radius:7px;padding:7px 9px;cursor:pointer;white-space:nowrap;transition:.16s}
+.mini:hover{border-color:var(--ink3)}
+.mini.on{background:#2f7a4b;color:#fff;border-color:#2f7a4b}
+.mini.gold.on{background:#d6a94c;border-color:#d6a94c}
+.edit-badge{font:700 10px/1 var(--mono);color:#8a6520;background:#fff7e4;
+  border:1px solid #ead9ae;border-radius:999px;padding:6px 10px}
+.doc-caption{position:absolute;left:50%;bottom:44px;transform:translateX(-50%) translateY(8px);
+  pointer-events:none;max-width:78%;text-align:center;background:rgba(20,30,24,.84);color:#f6f3e8;
+  border-radius:9px;padding:10px 18px;font-size:14px;line-height:1.6;letter-spacing:.02em;
+  opacity:0;transition:opacity .5s ease,transform .5s ease;box-shadow:0 8px 26px rgba(0,0,0,.2)}
+.doc-caption.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.doc-caption b{display:block;font:700 10px/1.6 var(--mono);letter-spacing:.16em;color:#e3b955}
+
+/* ── 无人机巡航 ── */
+.btn.drone{color:#7a5a12;border-color:#e6d3a3;background:#fffaf0}
+.btn.drone.on{background:#d6a94c;color:#fff;border-color:#d6a94c}
+.drone-card{position:absolute;top:80px;left:15px;width:216px;pointer-events:none;
+  background:rgba(255,254,248,.94);border:1px solid rgba(214,169,76,.55);border-radius:10px;
+  padding:10px 12px;box-shadow:0 6px 20px rgba(120,95,40,.13);
+  font:600 10.5px/1.65 var(--mono);color:#5b6860;opacity:0;transform:translateY(-6px);
+  transition:opacity .3s ease,transform .3s ease}
+.drone-card.on{opacity:1;transform:translateY(0)}
+.drone-card b{display:block;font-size:12px;color:#8a6520;letter-spacing:.04em}
+.drone-card .dbar{height:5px;background:#f0ece0;border-radius:999px;overflow:hidden;margin:7px 0}
+.drone-card .dbar i{display:block;height:100%;background:linear-gradient(90deg,#e3b955,#d6a94c);
+  width:0;transition:width .12s linear}
+.drone-card .row{display:flex;justify-content:space-between;gap:8px;font-size:10px}
+.drone-card .msg{margin-top:6px;color:#9a7a3a;font-size:10px;line-height:1.5}
+
+/* ── 信息区 ── */
+.info{display:grid;grid-template-columns:1.05fr .95fr;gap:14px;margin-top:16px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:16px 19px}
+.panel h3{margin:0 0 11px;font-size:14px;font-weight:800;display:flex;align-items:center;gap:9px}
+.panel h3 span{font:600 10px/1 var(--mono);letter-spacing:.12em;color:var(--ink3)}
+.detail{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.detail .big{font:800 34px/1 var(--mono);color:var(--act);font-variant-numeric:tabular-nums}
+.detail .dl{flex:1;min-width:180px;font-size:12.5px;color:var(--ink2);line-height:2}
+.detail .dl b{color:var(--ink);font-weight:700}
+.detail .dl em{font-style:normal;font:600 11px/1 var(--mono);color:var(--ink3)}
+.bars{display:flex;flex-direction:column;gap:9px}
+.bar-row{display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--ink2)}
+.bar-row .nm{width:74px;flex-shrink:0;font:600 10.5px/1 var(--mono)}
+.bar-row .track{flex:1;height:9px;background:#f0f0e9;border-radius:999px;overflow:hidden}
+.bar-row .fill{display:block;height:100%;border-radius:999px;transition:width .9s cubic-bezier(.2,.8,.3,1)}
+.bar-row .v{width:48px;text-align:right;font:700 11px/1 var(--mono);color:var(--ink)}
+
+.tip{position:fixed;z-index:60;pointer-events:none;background:#202823;color:#f4f6f1;border-radius:8px;
+  padding:9px 12px;font-size:11.5px;line-height:1.65;box-shadow:0 8px 22px rgba(0,0,0,.22);
+  opacity:0;transform:translateY(4px);transition:opacity .14s ease,transform .14s ease;max-width:230px}
+.tip.on{opacity:1;transform:translateY(0)}
+.tip b{font:700 12px/1.5 var(--mono);color:#e3b955}
+.tip i{font-style:normal;color:#9fb0a4}
+
+.foot{margin-top:26px;padding-top:18px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink3);line-height:1.9}
+.foot b{color:var(--ink2)}
+.foot ul{margin:8px 0 0;padding-left:18px}
+.foot li{margin-bottom:4px}
+
+@media(max-width:980px){
+  .stats{grid-template-columns:repeat(3,1fr)}
+  .info{grid-template-columns:1fr}
+  .acts{margin-left:0}
+  .stage-h .hint{margin-left:0;width:100%}
+  .viewport{height:400px}
+}
+@media(max-width:600px){
+  .wrap{padding:0 14px 50px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .mast{padding-top:26px}
+  .stage{padding:14px 10px 12px}
+  .timeline{min-width:100%}
+  .sep{display:none}
+  .viewport{height:360px}
+  .hud.br,.hud.bl,.peak-card{display:none}
+  .hud.tr{font-size:9px;max-width:52%;}
+  .drone-card{top:66px;left:10px;width:172px;padding:8px 10px}
+  .drone-card .row{font-size:9px}
+  .doc-caption{font-size:12px;max-width:88%;bottom:32px;padding:8px 12px}
+  .controls.secondary{padding:8px 10px;gap:6px}
+  .fps{font-size:9px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="mast">
+    <div class="plate"><i></i>COMMIT FIELD 3D &nbsp;·&nbsp; <span id="plateDays">370 DAYS</span> &nbsp;·&nbsp; 53 × 7 &nbsp;·&nbsp; EXTRUDED</div>
+    <h1>耕年 · 立体年鉴</h1>
+    <div class="en">THE CULTIVATED YEAR — A YEAR YOU CAN WALK AROUND</div>
+    <div class="source" id="sourceLine"></div>
+    <p class="thesis">每一天不再是一个色块，而是<b>一根从地里长出来的柱子</b>：贡献越多，柱越高。<br>俯瞰仍是那面 commit 墙；绕到侧面，它变成一片有高低、有阴影、有孤峰的田。</p>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <div class="controls">
+    <div class="srcsw" id="srcsw"><span>数据源</span><button data-src="demo">演示</button><button data-src="real">GitHub 真实</button></div>
+    <div class="sep"></div>
+    <button class="btn primary" id="playBtn">▶ 从年初生长</button>
+    <button class="btn drone" id="droneBtn">◈ 起飞巡航</button>
+    <button class="btn on" id="riseBtn">▥ 摊平为记录面</button>
+    <div class="sep"></div>
+    <div class="timeline">
+      <label for="week">时间轴</label>
+      <input id="week" type="range" min="0" max="52" step="1" value="52">
+      <span class="week" id="weekV">W53 / 53</span>
+    </div>
+    <div class="acts" id="acts"></div>
+    <div class="sep"></div>
+    <div class="viewbtns" id="viewbtns">
+      <button class="viewbtn" data-v="top">俯瞰</button>
+      <button class="viewbtn on" data-v="iso">等距</button>
+      <button class="viewbtn" data-v="horizon">平视</button>
+      <button class="viewbtn" data-v="free">自由</button>
+    </div>
+    <button class="btn on" id="cruiseBtn">◌ 巡游中</button>
+  </div>
+
+  <div class="controls secondary" id="secondary">
+    <div class="cgroup"><span>反事实</span>
+      <button class="mini" id="editBtn">✎ 编辑年份</button>
+      <button class="mini" id="resetBtn" style="display:none">↺ 还原</button>
+      <span class="edit-badge" id="editBadge" style="display:none">改动 0 天</span>
+    </div>
+    <div class="sep"></div>
+    <div class="cgroup" id="formbar"><span>形态</span></div>
+    <div class="sep"></div>
+    <div class="cgroup" id="missionbar"><span>巡航任务</span></div>
+    <div class="sep"></div>
+    <button class="mini" id="ecoBtn">❀ 生态层</button>
+    <button class="mini" id="dataViewBtn">▣ 数据视图</button>
+    <div class="sep"></div>
+    <button class="mini" id="posterBtn">▣ 年度海报</button>
+    <button class="mini gold" id="docBtn">▶ 60s 纪录片</button>
+    <button class="mini" id="recordBtn">● 录制</button>
+  </div>
+
+  <section class="stage" id="stage">
+    <div class="stage-h">
+      <b id="actName">第四幕 · 收成与休耕</b>
+      <span class="now" id="actNow">扫描线停在 W53 · 全年数据已铺满</span>
+      <span class="hint">拖拽旋转 · 滚轮缩放 · 悬停/点击柱子看当天 · ←→ 移周 · 空格播放 · 1/2/3 切视角</span>
+    </div>
+    <div class="actbar" id="actbar"><div class="cursor" id="actCursor"></div></div>
+    <div class="viewport" id="viewport">
+      <canvas id="scene"></canvas>
+      <div class="hud tl"><b id="viewLabel">等距视角</b><span id="viewSub">读田垄的高低与纵深</span></div>
+      <div class="hud tr" id="camHud">方位 0° · 俯角 0°</div>
+      <div class="hud bl">拖拽旋转 / 滚轮推拉 / 点击柱子聚焦</div>
+      <div class="hud br" id="peakHud">最高峰 · 163 次贡献</div>
+      <div class="peak-card" id="peakCard"><b id="peakNum">163</b><span id="peakDate">2026-06-25</span></div>
+      <div class="drone-card" id="droneCard"></div>
+      <div class="doc-caption" id="docCaption"></div>
+      <div class="fps" id="fps"></div>
+    </div>
+    <div class="legend">
+      <span id="unitLabel">贡献数</span>
+      <span id="levelLegend" style="display:flex;gap:9px;flex-wrap:wrap;align-items:center"></span>
+      <span style="margin-left:10px" class="keys"><i class="dikekey"></i>长连续记录（田埂）</span>
+      <span class="keys"><i class="fogkey"></i>较长休耕期（低地雾）</span>
+      <button class="btn" id="dikeBtn" style="margin-left:auto;padding:5px 10px;font-size:10.5px">隐藏田埂</button>
+    </div>
+  </section>
+
+  <div class="info">
+    <div class="panel">
+      <h3>这一格 <span>/ SELECTED DAY</span></h3>
+      <div class="detail" id="detail"></div>
+    </div>
+    <div class="panel">
+      <h3>四幕活跃周期 <span>/ ACT CYCLE</span></h3>
+      <div class="bars" id="bars"></div>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <span id="footData"></span><br>
+    <b>关于 3D：</b>柱高按当日贡献数的平方根连续编码并限幅（避免高峰遮住整片田），柱顶颜色仍用分档色阶；
+    相机为标准透视 look-at 模型，柱体按深度从远到近绘制并做背面剔除，方向光决定侧面明暗，高柱在地面留下投影。
+    四幕按 53 周均分，是叙事分段而非自然季节。
+    <ul>
+      <li>俯瞰 = 原 commit 墙读法，等距 = 田垄高低，平视 = 贡献天际线；三种视角看的是同一份数据。</li>
+      <li>「摊平 / 立起」让 370 根柱子连续升降，是从平面图长成立体田的转场，不另做一套图形。</li>
+      <li>金色田埂悬浮在柱顶之上连接 ≥12 天连续段；休耕期是贴地的半透明雾层与低洼地。</li>
+      <li><b>无人机巡航：</b>沿 W1→W53 逐列飞行，按四幕节奏把有贡献的日子「播下」（把 growth 置 1 并点亮柱体），休耕地跳过；田埂随播种逐段接上。再点一次召回，页面切后台自动暂停、回来继续；播放、时间轴或四幕跳转会接管并终止巡航，已播下的部分保留。</li>
+      <li><b>分层能力：</b>形态注册表让柱阵／梯田／织物／年轮共享同一相机与命中检测；任务接口让巡航可挂播种／巡检／收割；反事实编辑实时重算统计、田埂与四幕曲线并以虚线幽灵柱标出原值；60 秒纪录片按数据戏剧性自动编排镜头；生态层用藤蔓、草与孤峰树表达连续与空白，任何时候可一键回数据视图。</li>
+      <li>渲染为纯 Canvas 2D 手写投影，零外部依赖、可离线运行；命中检测在投影后的多边形上完成。</li>
+    </ul>
+  </footer>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ══ 数据层（与前版一致） ══ */
+  var REAL = {"from":"2025-11-02","to":"2026-11-06","header_total":2978,"dates":["2025-11-02","2025-11-03","2025-11-04","2025-11-05","2025-11-06","2025-11-07","2025-11-08","2025-11-09","2025-11-10","2025-11-11","2025-11-12","2025-11-13","2025-11-14","2025-11-15","2025-11-16","2025-11-17","2025-11-18","2025-11-19","2025-11-20","2025-11-21","2025-11-22","2025-11-23","2025-11-24","2025-11-25","2025-11-26","2025-11-27","2025-11-28","2025-11-29","2025-11-30","2025-12-01","2025-12-02","2025-12-03","2025-12-04","2025-12-05","2025-12-06","2025-12-07","2025-12-08","2025-12-09","2025-12-10","2025-12-11","2025-12-12","2025-12-13","2025-12-14","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19","2025-12-20","2025-12-21","2025-12-22","2025-12-23","2025-12-24","2025-12-25","2025-12-26","2025-12-27","2025-12-28","2025-12-29","2025-12-30","2025-12-31","2026-01-01","2026-01-02","2026-01-03","2026-01-04","2026-01-05","2026-01-06","2026-01-07","2026-01-08","2026-01-09","2026-01-10","2026-01-11","2026-01-12","2026-01-13","2026-01-14","2026-01-15","2026-01-16","2026-01-17","2026-01-18","2026-01-19","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-24","2026-01-25","2026-01-26","2026-01-27","2026-01-28","2026-01-29","2026-01-30","2026-01-31","2026-02-01","2026-02-02","2026-02-03","2026-02-04","2026-02-05","2026-02-06","2026-02-07","2026-02-08","2026-02-09","2026-02-10","2026-02-11","2026-02-12","2026-02-13","2026-02-14","2026-02-15","2026-02-16","2026-02-17","2026-02-18","2026-02-19","2026-02-20","2026-02-21","2026-02-22","2026-02-23","2026-02-24","2026-02-25","2026-02-26","2026-02-27","2026-02-28","2026-03-01","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-07","2026-03-08","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-14","2026-03-15","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-21","2026-03-22","2026-03-23","2026-03-24","2026-03-25","2026-03-26","2026-03-27","2026-03-28","2026-03-29","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-03","2026-04-04","2026-04-05","2026-04-06","2026-04-07","2026-04-08","2026-04-09","2026-04-10","2026-04-11","2026-04-12","2026-04-13","2026-04-14","2026-04-15","2026-04-16","2026-04-17","2026-04-18","2026-04-19","2026-04-20","2026-04-21","2026-04-22","2026-04-23","2026-04-24","2026-04-25","2026-04-26","2026-04-27","2026-04-28","2026-04-29","2026-04-30","2026-05-01","2026-05-02","2026-05-03","2026-05-04","2026-05-05","2026-05-06","2026-05-07","2026-05-08","2026-05-09","2026-05-10","2026-05-11","2026-05-12","2026-05-13","2026-05-14","2026-05-15","2026-05-16","2026-05-17","2026-05-18","2026-05-19","2026-05-20","2026-05-21","2026-05-22","2026-05-23","2026-05-24","2026-05-25","2026-05-26","2026-05-27","2026-05-28","2026-05-29","2026-05-30","2026-05-31","2026-06-01","2026-06-02","2026-06-03","2026-06-04","2026-06-05","2026-06-06","2026-06-07","2026-06-08","2026-06-09","2026-06-10","2026-06-11","2026-06-12","2026-06-13","2026-06-14","2026-06-15","2026-06-16","2026-06-17","2026-06-18","2026-06-19","2026-06-20","2026-06-21","2026-06-22","2026-06-23","2026-06-24","2026-06-25","2026-06-26","2026-06-27","2026-06-28","2026-06-29","2026-06-30","2026-07-01","2026-07-02","2026-07-03","2026-07-04","2026-07-05","2026-07-06","2026-07-07","2026-07-08","2026-07-09","2026-07-10","2026-07-11","2026-07-12","2026-07-13","2026-07-14","2026-07-15","2026-07-16","2026-07-17","2026-07-18","2026-07-19","2026-07-20","2026-07-21","2026-07-22","2026-07-23","2026-07-24","2026-07-25","2026-07-26","2026-07-27","2026-07-28","2026-07-29","2026-07-30","2026-07-31","2026-08-01","2026-08-02","2026-08-03","2026-08-04","2026-08-05","2026-08-06","2026-08-07","2026-08-08","2026-08-09","2026-08-10","2026-08-11","2026-08-12","2026-08-13","2026-08-14","2026-08-15","2026-08-16","2026-08-17","2026-08-18","2026-08-19","2026-08-20","2026-08-21","2026-08-22","2026-08-23","2026-08-24","2026-08-25","2026-08-26","2026-08-27","2026-08-28","2026-08-29","2026-08-30","2026-08-31","2026-09-01","2026-09-02","2026-09-03","2026-09-04","2026-09-05","2026-09-06","2026-09-07","2026-09-08","2026-09-09","2026-09-10","2026-09-11","2026-09-12","2026-09-13","2026-09-14","2026-09-15","2026-09-16","2026-09-17","2026-09-18","2026-09-19","2026-09-20","2026-09-21","2026-09-22","2026-09-23","2026-09-24","2026-09-25","2026-09-26","2026-09-27","2026-09-28","2026-09-29","2026-09-30","2026-10-01","2026-10-02","2026-10-03","2026-10-04","2026-10-05","2026-10-06","2026-10-07","2026-10-08","2026-10-09","2026-10-10","2026-10-11","2026-10-12","2026-10-13","2026-10-14","2026-10-15","2026-10-16","2026-10-17","2026-10-18","2026-10-19","2026-10-20","2026-10-21","2026-10-22","2026-10-23","2026-10-24","2026-10-25","2026-10-26","2026-10-27","2026-10-28","2026-10-29","2026-10-30","2026-10-31","2026-11-01","2026-11-02","2026-11-03","2026-11-04","2026-11-05","2026-11-06"],"counts":[0,0,2,4,1,4,10,10,1,15,3,0,0,0,1,1,1,0,0,4,7,1,1,0,7,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,4,0,0,2,2,4,5,0,0,1,2,5,5,4,1,6,9,8,4,0,0,4,0,0,0,8,0,0,1,13,1,0,1,2,5,12,2,2,12,16,4,13,16,25,28,32,14,0,0,1,0,0,2,0,6,10,2,0,2,0,0,0,0,0,0,0,0,0,0,3,5,3,3,6,4,2,2,5,6,2,1,10,2,2,1,0,2,1,1,9,15,0,0,0,0,1,2,3,3,0,1,2,4,2,0,0,0,4,2,14,6,6,4,0,1,0,15,1,6,2,3,6,2,2,1,2,5,2,0,1,21,6,6,6,16,10,5,2,1,2,3,5,16,32,1,8,2,3,32,31,45,13,18,44,33,39,9,54,70,30,56,24,10,8,23,6,0,1,2,0,0,0,7,1,0,6,2,0,3,10,0,2,4,19,12,139,63,15,27,163,25,34,0,0,49,31,7,0,0,1,0,0,0,5,4,5,13,9,2,0,0,10,0,9,41,19,0,11,1,0,8,5,6,6,25,39,68,44,0,2,0,3,21,17,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1,0,0,0,2,3,0,1,1,0,0,4,0,0,1,1,7,1,1,0,2,5,0,2,0,11,0,0,0,0,0,0,20,0,1,0,5,40,44,5,29,26,7,10,7,0,11,0,14,4,10,18,16,23,18,3,22,43,33,0,3,19,13,17,43,33,21,41,20,16,14,19,7,9],"levels":[0,0,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,0,0,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,1,0,0,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,0,0,0,1,0,0,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,2,2,2,1,0,0,1,0,0,1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,0,0,0,1,1,1,1,0,1,1,1,1,0,0,0,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,2,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,2,2,3,1,2,3,2,3,1,4,4,2,4,2,1,1,2,1,0,1,1,0,0,0,1,1,0,1,1,0,1,1,0,1,1,2,1,4,4,1,2,4,2,2,0,0,3,2,1,0,0,1,0,0,0,1,1,1,1,1,1,0,0,1,0,1,3,2,0,1,1,0,1,1,1,1,2,3,4,3,0,1,0,1,2,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1,0,0,0,1,1,0,1,1,0,0,1,0,0,1,1,1,1,1,0,1,1,0,1,0,1,0,0,0,0,0,0,2,0,1,0,1,3,3,1,2,2,1,1,1,0,1,0,1,1,1,2,1,2,2,1,2,3,2,0,1,2,1,1,3,2,2,3,2,1,1,2,1,1],"bounds":[[0,0],[1,17],[18,34],[39,49],[54,163]]};
+  var IS_REAL = location.hash.indexOf("#demo") !== 0;
+  var DAYS = IS_REAL ? REAL.counts.length : 371, WEEKS = 53;
+  var ACTS = [
+    {name:"第一幕 · 开荒", short:"Ⅰ 开荒", bg:"#eef1ea", act:"#6b8570", pace:150, color:"#93a898"},
+    {name:"第二幕 · 萌发", short:"Ⅱ 萌发", bg:"#edf4e6", act:"#6f9a5a", pace:105, color:"#9dc98f"},
+    {name:"第三幕 · 盛长", short:"Ⅲ 盛长", bg:"#f2f5e2", act:"#7d9a3c", pace:62,  color:"#c3cf72"},
+    {name:"第四幕 · 收成与休耕", short:"Ⅳ 收成", bg:"#f7f0e3", act:"#a67920", pace:110, color:"#d6a94c"}
+  ];
+  var LEVELS = ["var(--l0)","var(--l1)","var(--l2)","var(--l3)","var(--l4)"];
+  var LEVEL_RGB = [[234,232,222],[188,217,172],[138,194,124],[79,156,96],[37,107,64]];
+  var DOW = ["周日","周一","周二","周三","周四","周五","周六"];
+
+  function rng(seed){ var s=seed>>>0; return function(){ s=(s*1664525+1013904223)>>>0; return s/4294967296; }; }
+  function actOf(w){ return Math.min(3, Math.floor(w/(WEEKS/4))); }
+  function levelOf(c){ return c===0?0 : c<=2?1 : c<=5?2 : c<=9?3 : 4; }
+  function fmt(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+
+  var counts, levels, dates, bounds;
+  var END = new Date(2026,10,7);
+  if(IS_REAL){
+    counts = REAL.counts.slice(); levels = REAL.levels.slice();
+    dates = REAL.dates.slice(); bounds = REAL.bounds;
+  }else{
+    var R = rng(20261107);
+    counts = new Array(DAYS).fill(0);
+    for(var i=0;i<DAYS;i++){
+      var w=Math.floor(i/7), dow=i%7, act=actOf(w);
+      var base=[0.62,0.88,0.96,0.72][act];
+      var weekend=(dow===0||dow===6)?0.55:1;
+      var wave=0.78+0.32*Math.sin(w/3.4+0.9);
+      if(R()<base*weekend*wave) counts[i]=1+Math.floor(R()*(2+6*base));
+    }
+    [8,20,38,46].forEach(function(w){ for(var d=0;d<7;d++){ var k=w*7+d; if(k<DAYS) counts[k]=Math.max(counts[k],2+Math.floor(R()*9)); } });
+    for(var a=14*7;a<20*7;a++) counts[a]=Math.max(1,Math.floor(R()*8)+1);
+    for(var b=29*7;b<32*7;b++) counts[b]=0;
+    for(var q=44*7;q<44*7+10;q++) counts[q]=0;
+    counts[20*7+3]=14;
+    levels=counts.map(levelOf);
+    dates=[];
+    for(var di=0;di<DAYS;di++) dates.push(fmt(new Date(END.getTime()-(DAYS-1-di)*86400000)));
+    bounds=[[0,0],[1,2],[3,5],[6,9],[10,999]];
+  }
+  function dateOf(i){ var p=dates[i].split("-"); return new Date(+p[0],+p[1]-1,+p[2]); }
+  /* 反事实时间轴：BASE 保存原始年份，counts 可被编辑 */
+  var BASE=counts.slice();
+  var form="pillar", eco=false, editMode=false, mission="seed", ghostVisible=false;
+  var total,active,longest,peak,peakIdx,streaks,gaps,actTotals,maxAct,baseTotal;
+
+  function levelFor(c){
+    if(!c) return 0;
+    for(var L=4;L>=1;L--) if(bounds[L] && c>=bounds[L][0]) return L;
+    return 1;
+  }
+  function recompute(){
+    total=0;active=0;longest=0;peak=0;peakIdx=0;streaks=[];gaps=[];
+    var cur=0;
+    for(var i=0;i<DAYS;i++){
+      total+=counts[i];
+      if(counts[i]>peak){ peak=counts[i]; peakIdx=i; }
+      if(counts[i]>0){ active++; cur++; if(cur>longest)longest=cur; }
+      else { if(cur>=12)streaks.push([i-cur,cur]); cur=0; }
+      if(i===DAYS-1&&cur>=12)streaks.push([i-cur+1,cur]);
+    }
+    cur=0;
+    for(i=0;i<DAYS;i++){
+      if(counts[i]===0)cur++; else { if(cur>=10)gaps.push([i-cur,cur]); cur=0; }
+    }
+    if(cur>=10)gaps.push([DAYS-cur,cur]);
+    actTotals=[0,0,0,0];
+    for(i=0;i<DAYS;i++) actTotals[actOf(Math.floor(i/7))]+=counts[i];
+    maxAct=Math.max.apply(null,actTotals)||1;
+    if(baseTotal===undefined) baseTotal=total;
+
+    var d=total-baseTotal;
+    document.getElementById("stats").innerHTML=[
+      [total.toLocaleString()+(d?" <small style=\"font-size:12px;color:#a67920\">("+(d>0?"+":"")+d+")</small>":""),"全年贡献总数"],
+      [active,"有贡献的天数"],[longest+" 天","最长连续记录",true],
+      [gaps.length+" 段","较长休耕期（≥10 天）"],[peak+" 次","单日峰值"]
+    ].map(function(x){ return '<div class="stat'+(x[2]?" gold":"")+'"><b>'+x[0]+'</b><span>'+x[1]+'</span></div>'; }).join("");
+    document.getElementById("bars").innerHTML=ACTS.map(function(a,idx){
+      return '<div class="bar-row"><span class="nm">'+a.short+'</span><span class="track">'+
+        '<i class="fill" style="width:0%;background:'+a.color+'" data-w="'+
+        (actTotals[idx]/maxAct*100).toFixed(1)+'%"></i></span><span class="v">'+
+        actTotals[idx]+'</span></div>';
+    }).join("");
+    setTimeout(function(){ [].forEach.call(document.querySelectorAll(".fill"),function(f){ f.style.width=f.dataset.w; }); },30);
+    document.getElementById("peakNum").textContent=peak;
+    document.getElementById("peakDate").textContent=fmt(dateOf(peakIdx))+" · 全田孤峰";
+    document.getElementById("peakHud").textContent="最高峰 · "+peak+" 次贡献";
+    renderMeta();
+    if(typeof dirty!=="undefined") dirty=true;
+  }
+
+  /* 四幕条 */
+  var actbar=document.getElementById("actbar"), cursor=document.getElementById("actCursor");
+  ACTS.forEach(function(a,idx){
+    var d=document.createElement("div"); d.textContent=a.short; d.style.background=a.color+"55";
+    d.addEventListener("click",function(){ jumpTo(Math.ceil(idx*WEEKS/4)); });
+    actbar.appendChild(d);
+  });
+  var actsEl=document.getElementById("acts");
+  ACTS.forEach(function(a,idx){
+    var b=document.createElement("button"); b.className="act"; b.textContent=a.short; b.dataset.act=idx;
+    b.addEventListener("click",function(){ jumpTo(Math.ceil(idx*WEEKS/4)); });
+    actsEl.appendChild(b);
+  });
+
+  /* ══ 3D 世界 ══ */
+  var CELL=13, GAP=5, STEP=CELL+GAP;
+  var TW=WEEKS*STEP-GAP, TD=7*STEP-GAP;
+  function gridCoord(i){ return {x:Math.floor(i/7)*STEP-TW/2, z:(i%7)*STEP-TD/2}; }
+  function ringCoord(i){
+    var w=Math.floor(i/7), r=30+w*7.0, a=(i%7)/7*Math.PI*2-Math.PI/2;
+    return {x:Math.cos(a)*r-CELL/2, z:Math.sin(a)*r-CELL/2};
+  }
+  /* 形态注册表：新增形态只需提供 coord + draw，不触碰相机、统计与命中检测 */
+  var FORMS={
+    pillar: {label:"柱阵", coord:gridCoord, draw:function(cm,i,h){ drawPillar(cm,i,h); }},
+    contour:{label:"梯田", coord:gridCoord, draw:function(cm,i,h){ drawContour(cm,i,h); }},
+    weave:  {label:"织物", coord:gridCoord, draw:function(cm,i,h){ drawWeave(cm,i,h); }},
+    rings:  {label:"年轮", coord:ringCoord,  draw:function(cm,i,h){ drawRings(cm,i,h); }}
+  };
+  /* 每种形态有最合适的观察俯角，切换时镜头一起到位 */
+  var FORM_VIEW={
+    pillar:{elev:0.60,dist:1950}, contour:{elev:0.62,dist:1950},
+    weave:{elev:1.02,dist:2000}, rings:{elev:1.12,dist:2050}
+  };
+  function wx(i){ return FORMS[form].coord(i).x; }
+  function wz(i){ return FORMS[form].coord(i).z; }
+  function baseH(i){
+    var c=counts[i];
+    if(!c) return 0;
+    return Math.min(145, 6+Math.sqrt(c)*9.5);
+  }
+  var growth=new Array(DAYS).fill(1);
+  var rise=1, riseT=1;
+  function heightOf(i){ return baseH(i)*growth[i]*rise; }
+
+  var LIGHT=(function(){ var v={x:-0.55,y:1,z:-0.5}, l=Math.sqrt(v.x*v.x+v.y*v.y+v.z*v.z);
+    return {x:v.x/l,y:v.y/l,z:v.z/l}; })();
+  function shade(rgb,k){
+    return "rgb("+Math.min(255,Math.round(rgb[0]*k))+","+Math.min(255,Math.round(rgb[1]*k))+","+
+      Math.min(255,Math.round(rgb[2]*k))+")";
+  }
+
+  var cv=document.getElementById("scene"), ctx=cv.getContext("2d");
+  var vp=document.getElementById("viewport");
+  var W=0,H=0,DPR=1;
+  var FOCAL=2200; // 长焦：画面铺满而透视温和，避免前排柱子鱼眼般放大
+  var VIEWS={
+    top:    {yaw:0,     elev:1.46, dist:2000, label:"俯瞰视角", sub:"读原 commit 墙的 53 × 7"},
+    iso:    {yaw:-0.62, elev:0.60, dist:1950, label:"等距视角", sub:"读田垄的高低与纵深"},
+    horizon:{yaw:-0.24, elev:0.16, dist:1900, label:"平视视角", sub:"读一年贡献的天际线"},
+    free:   {label:"自由视角", sub:"拖拽旋转，绕着这块田走"}
+  };
+  var cam={yaw:-0.62,elev:0.60,dist:1950,zoom:1};
+  var camT={yaw:-0.62,elev:0.60,dist:1950,zoom:1};
+  var viewMode="iso", cruise=true, dragging=false, lastX=0,lastY=0;
+  var showDike=true, hover=-1, selected=IS_REAL?peakIdx:20*7+3;
+  var hitRegions=[], frameCount=0, fpsT=performance.now(), fps=0, dragMoved=0;
+
+  function resize(){
+    W=vp.clientWidth; H=vp.clientHeight;
+    DPR=Math.min(2,window.devicePixelRatio||1);
+    cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    cam.zoom=Math.max(0.40,Math.min(1.05,W/1180));
+    camT.zoom=cam.zoom;
+  }
+
+  function camera(){
+    var ce=Math.cos(cam.elev), se=Math.sin(cam.elev), cy=Math.cos(cam.yaw), sy=Math.sin(cam.yaw);
+    var C={x:cam.dist*ce*sy, y:cam.dist*se, z:cam.dist*ce*cy};
+    var L=Math.sqrt(C.x*C.x+C.y*C.y+C.z*C.z);
+    var f={x:-C.x/L,y:-C.y/L,z:-C.z/L};
+    var rx=-f.z, rz=f.x, rl=Math.sqrt(rx*rx+rz*rz)||1; rx/=rl; rz/=rl;
+    var u={x:0*f.z-rz*f.y, y:rz*f.x-rx*f.z, z:rx*f.y-0*f.x};
+    return {C:C,f:f,r:{x:rx,y:0,z:rz},u:u};
+  }
+  function project(p,cm){
+    var vx=p.x-cm.C.x, vy=p.y-cm.C.y, vz=p.z-cm.C.z;
+    var cx=vx*cm.r.x+vz*cm.r.z;
+    var cy=vx*cm.u.x+vy*cm.u.y+vz*cm.u.z;
+    var cz=vx*cm.f.x+vy*cm.f.y+vz*cm.f.z;
+    var s=FOCAL/Math.max(1,cz)*cam.zoom;
+    return {x:W/2+cx*s, y:H/2-cy*s, d:cz};
+  }
+  function poly(pts){
+    ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+    for(var k=1;k<pts.length;k++) ctx.lineTo(pts[k].x,pts[k].y);
+    ctx.closePath();
+  }
+  function dot(n,cx,cy,cz){ return n.x*cx+n.y*cy+n.z*cz; }
+
+  /* 地面 + 四幕色带 + 网格 */
+  function drawGround(cm){
+    if(form==="rings"){
+      for(var ring=3;ring>=0;ring--){
+        var r0=30+Math.ceil(ring*WEEKS/4)*7, r1=30+Math.ceil((ring+1)*WEEKS/4)*7;
+        ctx.beginPath();
+        for(var k=0;k<=36;k++){
+          var a=k/36*Math.PI*2, p=project({x:Math.cos(a)*r1,y:0,z:Math.sin(a)*r1},cm);
+          if(k===0)ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+        }
+        for(var k2=36;k2>=0;k2--){
+          var a2=k2/36*Math.PI*2, p2=project({x:Math.cos(a2)*r0,y:0,z:Math.sin(a2)*r0},cm);
+          ctx.lineTo(p2.x,p2.y);
+        }
+        ctx.closePath(); ctx.fillStyle=ACTS[ring].color+"30"; ctx.fill();
+        ctx.strokeStyle="rgba(70,95,75,.14)"; ctx.lineWidth=.8; ctx.stroke();
+      }
+      return;
+    }
+    var padX=16, padZ=30;
+    var corners=[
+      {x:-TW/2-padX,y:-1,z:-TD/2-padZ},{x:TW/2+padX,y:-1,z:-TD/2-padZ},
+      {x:TW/2+padX,y:-1,z:TD/2+padZ},{x:-TW/2-padX,y:-1,z:TD/2+padZ}
+    ].map(function(p){ return project(p,cm); });
+    poly(corners);
+    ctx.fillStyle="rgba(255,255,255,.42)"; ctx.fill();
+    ctx.strokeStyle="rgba(80,100,80,.16)"; ctx.lineWidth=1; ctx.stroke();
+
+    for(var a=0;a<4;a++){
+      var c0=Math.ceil(a*WEEKS/4), c1=Math.ceil((a+1)*WEEKS/4);
+      var x0=c0*STEP-TW/2-GAP/2, x1=c1*STEP-TW/2-GAP/2;
+      var q=[{x:x0,y:0,z:-TD/2-padZ/2},{x:x1,y:0,z:-TD/2-padZ/2},
+             {x:x1,y:0,z:TD/2+padZ/2},{x:x0,y:0,z:TD/2+padZ/2}].map(function(p){return project(p,cm);});
+      poly(q); ctx.fillStyle=ACTS[a].color+"30"; ctx.fill();
+    }
+    ctx.strokeStyle="rgba(70,95,75,.09)"; ctx.lineWidth=1;
+    for(var c=0;c<=WEEKS;c+=2){
+      var x=c*STEP-TW/2-GAP/2;
+      var p1=project({x:x,y:0,z:-TD/2-padZ/2},cm), p2=project({x:x,y:0,z:TD/2+padZ/2},cm);
+      ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+    }
+  }
+
+  /* 休耕低地雾 */
+  function drawFog(cm){
+    if(form==="rings") return;
+    gaps.forEach(function(g){
+      var c0=Math.floor(g[0]/7), c1=Math.floor((g[0]+g[1]-1)/7);
+      var x0=c0*STEP-TW/2-GAP, x1=(c1+1)*STEP-TW/2;
+      var q=[{x:x0,y:1,z:-TD/2-12},{x:x1,y:1,z:-TD/2-12},
+             {x:x1,y:1,z:TD/2+12},{x:x0,y:1,z:TD/2+12}].map(function(p){return project(p,cm);});
+      poly(q);
+      ctx.fillStyle="rgba(255,255,255,.60)"; ctx.fill();
+      ctx.strokeStyle="rgba(150,160,148,.35)"; ctx.setLineDash([4,4]); ctx.lineWidth=1; ctx.stroke(); ctx.setLineDash([]);
+      var mid=project({x:(x0+x1)/2,y:2,z:TD/2+30},cm);
+      ctx.fillStyle="#8d978f"; ctx.font="600 10px ui-monospace,Consolas,monospace";
+      ctx.textAlign="center"; ctx.fillText("休耕 "+g[1]+" 天",mid.x,mid.y);
+    });
+  }
+
+  var FACES=[
+    {idx:[0,1,5,4],n:{x:0,y:0,z:-1},pts:[0,1,5,4]},
+    {idx:[1,2,6,5],n:{x:1,y:0,z:0}, pts:[1,2,6,5]},
+    {idx:[2,3,7,6],n:{x:0,y:0,z:1}, pts:[2,3,7,6]},
+    {idx:[3,0,4,7],n:{x:-1,y:0,z:0},pts:[3,0,4,7]}
+  ];
+
+  function drawPillar(cm,i,h){
+    var X=wx(i),Z=wz(i),c=CELL;
+    var V=[
+      {x:X,y:0,z:Z},{x:X+c,y:0,z:Z},{x:X+c,y:0,z:Z+c},{x:X,y:0,z:Z+c},
+      {x:X,y:h,z:Z},{x:X+c,y:h,z:Z},{x:X+c,y:h,z:Z+c},{x:X,y:h,z:Z+c}
+    ];
+    var P=V.map(function(p){return project(p,cm);});
+    var rgb=LEVEL_RGB[levels[i]];
+    var quads=[];
+
+    /* 投影（高柱才画，控制绘制量） */
+    if(h>16){
+      var sx=-LIGHT.x*h*0.42, sz=-LIGHT.z*h*0.42;
+      var sh=[{x:X+sx,y:0,z:Z+sz},{x:X+c+sx,y:0,z:Z+sz},
+              {x:X+c+sx,y:0,z:Z+c+sz},{x:X+sx,y:0,z:Z+c+sz}].map(function(p){return project(p,cm);});
+      poly(sh); ctx.fillStyle="rgba(42,58,44,.075)"; ctx.fill();
+    }
+
+    /* 侧面（背面剔除 + 方向光） */
+    if(h>0.4){
+      for(var f=0;f<4;f++){
+        var F=FACES[f];
+        var ids=F.idx, ctr={x:0,y:0,z:0};
+        for(var k=0;k<4;k++){ ctr.x+=V[ids[k]].x/4; ctr.y+=V[ids[k]].y/4; ctr.z+=V[ids[k]].z/4; }
+        var toCam={x:cm.C.x-ctr.x,y:cm.C.y-ctr.y,z:cm.C.z-ctr.z};
+        if(dot(F.n,toCam.x,toCam.y,toCam.z)<=0) continue;
+        var k2=0.50+0.34*Math.max(0,dot(F.n,LIGHT.x,LIGHT.y,LIGHT.z));
+        var qp=F.pts.map(function(j){return P[j];});
+        poly(qp); ctx.fillStyle=shade(rgb,k2); ctx.fill();
+        ctx.strokeStyle="rgba(30,48,35,.10)"; ctx.lineWidth=.6; ctx.stroke();
+        quads.push(qp);
+      }
+    }
+    /* 顶面 */
+    var top=[P[4],P[5],P[6],P[7]];
+    poly(top); ctx.fillStyle=shade(rgb,1); ctx.fill();
+    ctx.strokeStyle=(i===hover)?"#202823":(i===selected?"#d6a94c":"rgba(40,60,45,.13)");
+    ctx.lineWidth=(i===hover||i===selected)?2:0.7; ctx.stroke();
+    if(pulse[i]>0){
+      var u=1-pulse[i]/DRONE.PULSE;
+      ctx.fillStyle="rgba(255,240,190,"+(0.38*(1-u)).toFixed(3)+")";
+      poly(top); ctx.fill();
+      var mx=(top[0].x+top[1].x+top[2].x+top[3].x)/4;
+      var my=(top[0].y+top[1].y+top[2].y+top[3].y)/4;
+      ctx.strokeStyle="rgba(227,185,85,"+(0.8*(1-u)).toFixed(3)+")";
+      ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(mx,my,4+u*17,0,Math.PI*2); ctx.stroke();
+    }
+    quads.push(top);
+    hitRegions.push({i:i,quads:quads});
+  }
+
+  /* 形态二：等高线梯田 —— 把一根柱子拆成随贡献数递增的层叠薄片 */
+  function drawContour(cm,i,h){
+    var X=wx(i),Z=wz(i),c=CELL,rgb=LEVEL_RGB[levels[i]],quads=[];
+    var layers=h<=0.4?1:Math.max(1,Math.min(4,Math.round(Math.sqrt(counts[i]||0))));
+    for(var L=0;L<layers;L++){
+      var inset=L*1.8, y=h*(L+1)/layers;
+      var q=[{x:X+inset,y:y,z:Z+inset},{x:X+c-inset,y:y,z:Z+inset},
+             {x:X+c-inset,y:y,z:Z+c-inset},{x:X+inset,y:y,z:Z+c-inset}].map(function(p){return project(p,cm);});
+      poly(q); ctx.fillStyle=shade(rgb,0.68+L*0.10); ctx.fill();
+      ctx.strokeStyle="rgba(40,60,45,.26)"; ctx.lineWidth=.8; ctx.stroke();
+      quads.push(q);
+    }
+    var edge=[{x:X,y:0,z:Z},{x:X,y:h,z:Z},{x:X+c,y:h,z:Z},{x:X+c,y:0,z:Z}].map(function(p){return project(p,cm);});
+    ctx.strokeStyle="rgba(50,70,52,.35)"; ctx.lineWidth=.9;
+    ctx.beginPath(); ctx.moveTo(edge[0].x,edge[0].y); ctx.lineTo(edge[1].x,edge[1].y); ctx.stroke();
+    quads.push(edge);
+    hitRegions.push({i:i,quads:quads});
+  }
+
+  /* 形态三：织物经纬 —— 经线、纬线与结点，高度只做轻微起伏 */
+  function drawWeave(cm,i,h){
+    var X=wx(i),Z=wz(i),c=CELL,rgb=LEVEL_RGB[levels[i]],y=h*0.42;
+    var warp=[{x:X+c/2-2.4,y:y,z:Z},{x:X+c/2+2.4,y:y,z:Z},
+              {x:X+c/2+2.4,y:y,z:Z+c},{x:X+c/2-2.4,y:y,z:Z+c}].map(function(p){return project(p,cm);});
+    var weft=[{x:X,y:y+0.8,z:Z+c/2-2.4},{x:X+c,y:y+0.8,z:Z+c/2-2.4},
+              {x:X+c,y:y+0.8,z:Z+c/2+2.4},{x:X,y:y+0.8,z:Z+c/2+2.4}].map(function(p){return project(p,cm);});
+    poly(warp); ctx.fillStyle=shade(rgb,.78); ctx.fill();
+    ctx.strokeStyle="rgba(40,60,45,.18)"; ctx.lineWidth=.6; ctx.stroke();
+    poly(weft); ctx.fillStyle=shade(rgb,1); ctx.fill(); ctx.stroke();
+    var q=project({x:X+c/2,y:y+1.6,z:Z+c/2},cm);
+    ctx.fillStyle=shade(rgb,1.12); ctx.beginPath(); ctx.arc(q.x,q.y,2.6,0,Math.PI*2); ctx.fill();
+    hitRegions.push({i:i,quads:[warp,weft]});
+  }
+
+  /* 形态四：环形年轮 —— 53 周变成 53 圈半径，7 天变成 7 个扇区 */
+  function drawRings(cm,i,h){
+    var C=ringCoord(i),c=CELL,a=(i%7)/7*Math.PI*2-Math.PI/2,ca=Math.cos(a),sa=Math.sin(a);
+    function corner(dx,dz,hh){
+      return {x:C.x+c/2+dx*ca-dz*sa, y:hh, z:C.z+c/2+dx*sa+dz*ca};
+    }
+    var b=[corner(-c/2,-c/2,0),corner(c/2,-c/2,0),corner(c/2,c/2,0),corner(-c/2,c/2,0)];
+    var t=[corner(-c/2,-c/2,h),corner(c/2,-c/2,h),corner(c/2,c/2,h),corner(-c/2,c/2,h)];
+    var pb=b.map(function(p){return project(p,cm);}), pt=t.map(function(p){return project(p,cm);});
+    var rgb=LEVEL_RGB[levels[i]],quads=[];
+    if(h>0.4){
+      var side=[pb[1],pb[2],pt[2],pt[1]];
+      poly(side); ctx.fillStyle=shade(rgb,.62); ctx.fill();
+      ctx.strokeStyle="rgba(40,60,45,.20)"; ctx.lineWidth=.7; ctx.stroke();
+      quads.push(side);
+    }
+    poly(pt); ctx.fillStyle=shade(rgb,1); ctx.fill();
+    ctx.strokeStyle=(i===hover)?"#202823":(i===selected?"#d6a94c":"rgba(40,60,45,.16)");
+    ctx.lineWidth=(i===hover||i===selected)?2:.7; ctx.stroke();
+    quads.push(pt);
+    hitRegions.push({i:i,quads:quads});
+  }
+
+  /* 悬浮田埂 */
+  /* 年轮形态：田埂沿圆周细分成短弧，而非跨圆心的弦 */
+  function drawDikeRings(cm){
+    ctx.save();
+    ctx.lineCap="round"; ctx.lineJoin="round";
+    ctx.shadowColor="rgba(227,185,85,.8)"; ctx.shadowBlur=6;
+    ctx.strokeStyle="rgba(227,185,85,.85)"; ctx.lineWidth=2.2;
+    streaks.forEach(function(s){
+      for(var k=s[0];k<s[0]+s[1];k++){
+        if(growth[k]<=0) break;
+        var w=Math.floor(k/7), d=k%7, r=30+w*7.0;
+        var a0=d/7*Math.PI*2-Math.PI/2, a1=a0+Math.PI*2/7, h=heightOf(k)+5;
+        ctx.beginPath();
+        for(var q=0;q<=5;q++){
+          var a=a0+(a1-a0)*q/5;
+          var p=project({x:Math.cos(a)*r,y:h,z:Math.sin(a)*r},cm);
+          if(q===0)ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+        }
+        ctx.stroke();
+      }
+    });
+    ctx.restore();
+  }
+  function drawDike(cm){
+    if(!showDike) return;
+    if(form==="rings"){ drawDikeRings(cm); return; }
+    ctx.save();
+    ctx.lineCap="round"; ctx.lineJoin="round";
+    ctx.shadowColor="rgba(227,185,85,.9)"; ctx.shadowBlur=9;
+    streaks.forEach(function(s){
+      ctx.beginPath();
+      for(var k=s[0];k<s[0]+s[1];k++){
+        if(growth[k]<=0) break;                 /* 田埂随无人机播种逐段点亮 */
+        var p=project({x:wx(k)+CELL/2,y:heightOf(k)+5,z:wz(k)+CELL/2},cm);
+        /* 年轮形态下跨周不连直线，避免金色田埂穿过圆心织成乱网 */
+        var brk = k===s[0] || (form==="rings" && Math.floor(k/7)!==Math.floor((k-1)/7));
+        if(brk)ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+      }
+      ctx.strokeStyle="rgba(227,185,85,.95)"; ctx.lineWidth=2.6; ctx.stroke();
+    });
+    ctx.restore();
+  }
+
+  /* 孤峰光晕 */
+  function drawPeak(cm){
+    var h=heightOf(peakIdx);
+    if(h<3) return;
+    var p=project({x:wx(peakIdx)+CELL/2,y:h,z:wz(peakIdx)+CELL/2},cm);
+    var g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,42);
+    g.addColorStop(0,"rgba(240,205,110,.55)"); g.addColorStop(1,"rgba(240,205,110,0)");
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,46,0,Math.PI*2); ctx.fill();
+    /* 孤峰光柱：全场唯一的垂直光源，成为记忆点 */
+    var lg=ctx.createLinearGradient(p.x,p.y,p.x,p.y-82);
+    lg.addColorStop(0,"rgba(240,205,110,.55)"); lg.addColorStop(1,"rgba(240,205,110,0)");
+    ctx.fillStyle=lg; ctx.fillRect(p.x-3,p.y-82,6,82);
+    ctx.strokeStyle="rgba(190,145,45,.8)"; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(p.x-7,p.y-82); ctx.lineTo(p.x+7,p.y-82); ctx.stroke();
+    ctx.fillStyle="#8a6520"; ctx.font="700 12px ui-monospace,Consolas,monospace";
+    ctx.textAlign="center"; ctx.fillText(String(peak),p.x,p.y-90);
+  }
+
+  /* 月份标签（贴地前缘，水平绘制保证可读） */
+  function drawMonths(cm){
+    if(form==="rings") return;
+    ctx.fillStyle="#8d978f"; ctx.font="600 10px ui-monospace,Consolas,monospace"; ctx.textAlign="left";
+    var last=-1, lastX=-1e9;
+    for(var w=0;w<WEEKS;w++){
+      var idx=w*7; if(idx>=DAYS) break;
+      var d=dateOf(idx), mo=d.getMonth();
+      if(mo!==last){
+        var p=project({x:w*STEP-TW/2,y:0,z:TD/2+42},cm);
+        /* 窄屏投影间距变小，按屏幕距离抽稀，避免月份标签叠成一团 */
+        if(p.x-lastX>=46){ ctx.fillText((mo+1)+"月",p.x,p.y); lastX=p.x; }
+        last=mo;
+      }
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    /* 大气辉光：平视时最强，随俯角增大淡出，给天际线一层逆光 */
+    var hs=Math.max(0,1-cam.elev/0.72);
+    if(hs>0.02){
+      var hy=H*0.60;
+      var ag=ctx.createLinearGradient(0,hy-110,0,hy+80);
+      ag.addColorStop(0,"rgba(255,244,208,0)");
+      ag.addColorStop(0.55,"rgba(255,236,186,"+(0.34*hs).toFixed(3)+")");
+      ag.addColorStop(1,"rgba(255,244,208,0)");
+      ctx.fillStyle=ag; ctx.fillRect(0,hy-110,W,190);
+    }
+    /* 暗角：把视线收拢到田垄主体 */
+    var vg=ctx.createRadialGradient(W/2,H*0.52,H*0.20,W/2,H*0.52,W*0.66);
+    vg.addColorStop(0,"rgba(55,72,56,0)");
+    vg.addColorStop(1,"rgba(55,72,56,.09)");
+    ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+
+    var cm=camera();
+    hitRegions=[];
+    drawGround(cm);
+    drawFog(cm);
+
+    var order=[];
+    for(var i=0;i<DAYS;i++){
+      var p=project({x:wx(i)+CELL/2,y:0,z:wz(i)+CELL/2},cm);
+      order.push({i:i,d:p.d});
+    }
+    order.sort(function(a,b){ return b.d-a.d; });
+    for(var k=0;k<order.length;k++) FORMS[form].draw(cm,order[k].i,heightOf(order[k].i));
+    drawEco(cm);
+    drawGhosts(cm);
+    drawDike(cm);
+    drawPeak(cm);
+    drawDrone(cm);
+    drawMonths(cm);
+
+    document.getElementById("camHud").textContent =
+      "方位 "+Math.round(cam.yaw*180/Math.PI)+"° · 俯角 "+Math.round(cam.elev*180/Math.PI)+"° · 距离 "+Math.round(cam.dist);
+    /* 孤峰卡片跟着「那根柱子是否已被播下」变化，避免巡航中说有峰而田里没有 */
+    var pk=document.getElementById("peakCard");
+    if(pk) pk.style.opacity=(growth[peakIdx]>0)?"1":"0.28";
+  }
+
+  /* ══ 无人机巡航：沿时间轴播下 commits ══ */
+  var DRONE={
+    ALT:36,          /* 相对当列最高柱顶的飞行高度（世界单位） */
+    COL_SCALE:1.6,   /* 每列时长相对四幕 pace 的倍率：全程约 10s */
+    TAKEOFF:900,     /* 起飞时长 ms */
+    TRAIL:28,        /* 尾迹采样点数 */
+    PULSE:760,       /* 柱体被点亮后的高亮时长 ms */
+    DROP_MS:430,     /* 光点下投时长 ms */
+    MAX_DT:60,       /* 单帧最大推进步长 ms，防切后台回来瞬间跑完 */
+    SWAY:2.1         /* 7 行之间的 S 形摆幅 */
+  };
+  var BUSY_MODES={takeoff:1,seeding:1,paused:1};
+  var pulse=new Float32Array(DAYS);
+  var drone={
+    mode:"idle", reason:"", busy:false, pausedFrom:"seeding",
+    colF:0, lastCol:-1, lastUI:-1, seeded:0, skipped:0, peakHit:false,
+    takeoffT:0, elapsed:0, cruiseWasOn:false, fade:0,
+    trail:[], drops:[], pos:{x:0,y:0,z:0}, ySmooth:0, visited:0
+  };
+  /* 任务接口：后续新功能都以「挂载一个任务」接入，不改状态机 */
+  var MISSIONS={
+    seed:{label:"播种",apply:function(i,wp){
+      growth[i]=1; pulse[i]=DRONE.PULSE;
+      drone.drops.push({i:i,t:0,x0:wp.x,y0:wp.y,z0:wp.z});
+      if(i===peakIdx) drone.peakHit=true;
+    }},
+    patrol:{label:"巡检",apply:function(i){ pulse[i]=DRONE.PULSE*1.5; }},
+    harvest:{label:"收割",apply:function(i,wp){
+      growth[i]=0; pulse[i]=DRONE.PULSE;
+      drone.drops.push({i:i,t:0,x0:wp.x,y0:wp.y,z0:wp.z});
+    }}
+  };
+  var droneBtn=document.getElementById("droneBtn"), droneCard=document.getElementById("droneCard");
+
+  function droneActive(){ return !!BUSY_MODES[drone.mode]; }
+  function cruiseButton(on){
+    var cb=document.getElementById("cruiseBtn");
+    cruise=on;
+    cb.textContent=on?"◌ 巡游中":"◌ 已暂停";
+    cb.classList.toggle("on",on);
+  }
+  function droneRestoreCruise(){ if(drone.cruiseWasOn) cruiseButton(true); }
+
+  function droneStart(){
+    if(drone.busy) return;                       /* 防重入 */
+    if(droneActive()){ droneRecall("手动召回"); return; }  /* 重复触发 = 召回，不叠开第二条航线 */
+    if(!active){                                 /* 空数据 */
+      drone.mode="aborted"; drone.reason="整年没有可播的 commits";
+      renderDroneCard(); return;
+    }
+    drone.busy=true;
+    if(playing) stop();
+    growth.fill(mission==="harvest"?1:0); pulse.fill(0);  /* 收割任务从满田开始 */
+    drone.mode="takeoff"; drone.reason=""; drone.colF=0;
+    drone.lastCol=-1; drone.lastUI=-1;
+    drone.seeded=0; drone.skipped=0; drone.visited=0; drone.peakHit=false;
+    drone.takeoffT=0; drone.elapsed=0;
+    drone.trail=[]; drone.drops=[]; drone.ySmooth=0;
+    drone.cruiseWasOn=cruise;
+    cruiseButton(false);                        /* 镜头锁定，避免与无人机同时运动 */
+    setWeek(0,false);
+    hover=-1; tip.classList.remove("on");
+    drone.busy=false; dirty=true; renderDroneCard();
+  }
+  function droneEnd(mode,reason){
+    drone.mode=mode; drone.reason=reason; drone.fade=900;
+    drone.drops=[];
+    droneRestoreCruise();                      /* 结束时把镜头交还 */
+    renderDroneCard(); dirty=true;
+  }
+  function droneRecall(reason){ if(droneActive()) droneEnd("recalled",reason||"手动召回"); }
+  function droneAbort(reason){ if(droneActive()) droneEnd("aborted",reason); }
+  function droneFinish(){ droneEnd("completed","全年巡航完成 · 田已种满"); }
+
+  function setWeekUI(c){
+    var cc=Math.max(0,Math.min(WEEKS-1,c));
+    if(cc===drone.lastUI) return;
+    drone.lastUI=cc; col=cc;
+    document.getElementById("week").value=col;
+    document.getElementById("weekV").textContent="W"+(col+1)+" / 53";
+    cursor.style.left=((col+0.5)/WEEKS*100).toFixed(2)+"%";
+    applyAct();
+  }
+  function droneSeedUpTo(c){
+    var wp=droneWorld();
+    for(var cc=drone.lastCol+1; cc<=c; cc++){
+      for(var r=0;r<7;r++){
+        var i=cc*7+r;
+        if(i>=DAYS) break;
+        MISSIONS[mission].apply(i,wp);
+        drone.visited++;
+        if(counts[i]>0){ if(growth[i]>0) drone.seeded++; }
+        else drone.skipped++;
+      }
+      drone.lastCol=cc;
+    }
+  }
+  function droneWorld(){
+    var c=Math.max(0,Math.min(WEEKS-1,drone.colF));
+    var c0=Math.floor(c), tf=c-c0;
+    var ia=Math.min(DAYS-1,c0*7+3), ib=Math.min(DAYS-1,Math.min(WEEKS-1,c0+1)*7+3);
+    var pa=FORMS[form].coord(ia), pb=FORMS[form].coord(ib);
+    var x=pa.x+(pb.x-pa.x)*tf+CELL/2;
+    var z=pa.z+(pb.z-pa.z)*tf+CELL/2;
+    var hh=0, ci=Math.floor(c);
+    for(var r=0;r<7;r++){ var i=ci*7+r; if(i<DAYS) hh=Math.max(hh,heightOf(i)); }
+    var y=hh+DRONE.ALT;
+    if(drone.mode==="takeoff"){
+      var u=Math.min(1,drone.takeoffT/DRONE.TAKEOFF);
+      var e=1-Math.pow(1-u,3);
+      y=(hh*0.15)+(hh+DRONE.ALT-hh*0.15)*e;
+    }
+    return {x:x,y:y,z:z};
+  }
+  function droneUpdate(dt){
+    var ddt=Math.min(DRONE.MAX_DT,dt);
+    /* 与状态无关的自然衰减：高亮与投放粒子始终收敛 */
+    for(var a=0;a<DAYS;a++) if(pulse[a]>0) pulse[a]=Math.max(0,pulse[a]-ddt);
+    for(var d=0;d<drone.drops.length;d++) drone.drops[d].t+=ddt;
+    if(drone.drops.length) drone.drops=drone.drops.filter(function(o){return o.t<DRONE.DROP_MS;});
+    if(drone.fade>0){ drone.fade=Math.max(0,drone.fade-ddt); dirty=true; }
+
+    if(!droneActive()||drone.mode==="paused") return;
+    drone.elapsed+=ddt;
+    if(drone.mode==="takeoff"){
+      drone.takeoffT+=ddt;
+      if(drone.takeoffT>=DRONE.TAKEOFF) drone.mode="seeding";
+    }else if(drone.mode==="seeding"){
+      var pace=ACTS[actOf(Math.min(WEEKS-1,Math.floor(drone.colF)))].pace*DRONE.COL_SCALE;
+      drone.colF=Math.min(WEEKS-1,drone.colF+ddt/pace);
+      droneSeedUpTo(Math.floor(drone.colF));
+      setWeekUI(Math.floor(drone.colF));
+      if(drone.colF>=WEEKS-1 && drone.lastCol>=WEEKS-1){ droneFinish(); }
+    }
+    drone.pos=droneWorld();
+    drone.trail.push({x:drone.pos.x,y:drone.pos.y,z:drone.pos.z});
+    if(drone.trail.length>DRONE.TRAIL) drone.trail.shift();
+    renderDroneCard(); dirty=true;
+  }
+
+  function renderDroneCard(){
+    var m=drone.mode, busy=droneActive();
+    droneCard.classList.toggle("on",m!=="idle");
+    droneBtn.classList.toggle("on",busy);
+    droneBtn.textContent=busy?"◈ 召回无人机":(m==="idle"?"◈ 起飞巡航":"◈ 重新巡航");
+    if(m==="idle") return;
+    var label={takeoff:"起飞中",seeding:"巡航播种中",paused:"已暂停 · 页面切换",
+      completed:"巡航完成",recalled:"已召回",aborted:"已中断"}[m]||m;
+    var pct=Math.min(100,drone.colF/(WEEKS-1)*100);
+    var w=Math.min(WEEKS,Math.floor(drone.colF)+1);
+    droneCard.innerHTML='<b>◈ '+label+'</b>'+
+      '<div class="row"><span>W'+w+' / 53</span><span>'+ACTS[actOf(Math.min(WEEKS-1,Math.floor(drone.colF)))].short+'</span></div>'+
+      '<div class="dbar"><i style="width:'+pct.toFixed(1)+'%"></i></div>'+
+      '<div class="row"><span>'+(mission==="seed"?"播下 "+drone.seeded:mission==="harvest"?"收割 "+drone.visited:"巡检 "+drone.visited)+
+        ' / '+active+'</span><span>休耕 '+drone.skipped+'</span></div>'+
+      (drone.peakHit?'<div class="msg">✦ 孤峰 '+peak+' 已点亮</div>':'')+
+      (drone.reason?'<div class="msg">'+drone.reason+'</div>':'')+
+      (m==="completed"?'<div class="msg">'+(drone.elapsed/1000).toFixed(1)+'s · 镜头已交还</div>':'');
+  }
+
+  function drawDrone(cm){
+    var live=droneActive();
+    if(!live&&drone.fade<=0) return;
+    ctx.save();
+    ctx.globalAlpha=live?1:Math.max(0,drone.fade/900);
+    if(drone.trail.length>1){
+      for(var k=1;k<drone.trail.length;k++){
+        var a=project(drone.trail[k-1],cm), b=project(drone.trail[k],cm);
+        ctx.strokeStyle="rgba(214,169,76,"+(k/drone.trail.length*0.62).toFixed(3)+")";
+        ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+      }
+    }
+    var p=project(drone.pos,cm);
+    /* 下投光点 */
+    drone.drops.forEach(function(d){
+      var u=Math.min(1,d.t/DRONE.DROP_MS);
+      var X=d.x0+(wx(d.i)+CELL/2-d.x0)*u;
+      var Z=d.z0+(wz(d.i)+CELL/2-d.z0)*u;
+      var Y=d.y0+(heightOf(d.i)+4-d.y0)*u-10*Math.sin(Math.PI*u);
+      var q=project({x:X,y:Y,z:Z},cm);
+      ctx.fillStyle="rgba(240,200,100,"+(1-u*0.45).toFixed(2)+")";
+      ctx.beginPath(); ctx.arc(q.x,q.y,3.2-1.4*u,0,Math.PI*2); ctx.fill();
+    });
+    /* 下投光束与地面阴影 */
+    var g0=project({x:drone.pos.x,y:0,z:drone.pos.z},cm);
+    var bg=ctx.createLinearGradient(p.x,p.y,g0.x,g0.y);
+    bg.addColorStop(0,"rgba(255,216,120,.48)"); bg.addColorStop(1,"rgba(255,225,150,0)");
+    ctx.fillStyle=bg; ctx.beginPath();
+    ctx.moveTo(p.x-7,p.y); ctx.lineTo(p.x+7,p.y);
+    ctx.lineTo(g0.x+22,g0.y); ctx.lineTo(g0.x-22,g0.y); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="rgba(60,70,50,.10)";
+    ctx.beginPath(); ctx.ellipse(g0.x,g0.y,15,4.5,0,0,Math.PI*2); ctx.fill();
+    /* 柔光晕：让机体在浅色田垄背景上跳出来 */
+    var hg=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,30);
+    hg.addColorStop(0,"rgba(255,231,160,.48)"); hg.addColorStop(1,"rgba(255,231,160,0)");
+    ctx.fillStyle=hg; ctx.beginPath(); ctx.arc(p.x,p.y,30,0,Math.PI*2); ctx.fill();
+    /* 四轴机体 */
+    var sz=16;
+    ctx.fillStyle="rgba(45,60,48,.26)";
+    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(o){
+      ctx.beginPath(); ctx.ellipse(p.x+o[0]*sz,p.y+o[1]*sz*0.55,sz*0.62,sz*0.22,0,0,Math.PI*2); ctx.fill();
+    });
+    ctx.strokeStyle="#3c4b3f"; ctx.lineWidth=2; ctx.beginPath();
+    ctx.moveTo(p.x-sz,p.y-sz*0.55); ctx.lineTo(p.x+sz,p.y+sz*0.55);
+    ctx.moveTo(p.x+sz,p.y-sz*0.55); ctx.lineTo(p.x-sz,p.y+sz*0.55); ctx.stroke();
+    ctx.fillStyle="#e8b64a"; ctx.beginPath();
+    ctx.moveTo(p.x,p.y-8); ctx.lineTo(p.x+9,p.y); ctx.lineTo(p.x,p.y+8); ctx.lineTo(p.x-9,p.y);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle="#8a6520"; ctx.lineWidth=1.4; ctx.stroke();
+    ctx.fillStyle=(Math.floor(performance.now()/260)%2)?"#fff3c4":"#e3b955";
+    ctx.beginPath(); ctx.arc(p.x,p.y,2.2,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#7a5a12"; ctx.font="700 10px ui-monospace,Consolas,monospace"; ctx.textAlign="left";
+    ctx.fillText("DRONE · W"+(Math.floor(drone.colF)+1),p.x+16,p.y-12);
+    ctx.restore();
+  }
+
+  /* ══ P0 海报导出 ══ */
+  function exportPoster(){
+    var sc=2, head=Math.round(104*sc), foot=Math.round(62*sc);
+    var pw=Math.round(W*sc), ph=Math.round(H*sc);
+    var c=document.createElement("canvas"); c.width=pw; c.height=ph+head+foot;
+    var g=c.getContext("2d");
+    g.fillStyle="#f7f6f1"; g.fillRect(0,0,c.width,c.height);
+    g.drawImage(cv,0,head,pw,ph);
+    g.fillStyle="#202823"; g.font="800 "+(30*sc)+"px -apple-system,PingFang SC,Microsoft YaHei,sans-serif";
+    g.fillText("耕年 · 立体年鉴",26*sc,44*sc);
+    g.fillStyle="#8d978f"; g.font="600 "+(12*sc)+"px ui-monospace,Consolas,monospace";
+    g.fillText("THE CULTIVATED YEAR · "+FORMS[form].label+" · "+VIEWS[viewMode].label,27*sc,70*sc);
+    g.fillStyle="#5b6860"; g.font="700 "+(14*sc)+"px ui-monospace,Consolas,monospace";
+    g.fillText(total.toLocaleString()+" 次贡献   /   "+active+" 活跃天   /   最长连续 "+longest+" 天   /   峰值 "+peak+" 次",
+      27*sc,92*sc);
+    var fy=ph+head;
+    g.fillStyle="#8d978f"; g.font="600 "+(11*sc)+"px ui-monospace,Consolas,monospace";
+    g.fillText((IS_REAL?"来源 github.com/hengxin · 2025-11-02 → 2026-11-06 · 2026-11-07 抓取":"确定性演示数据集")+
+      "   ·   contributions 含提交/PR/issue/review，不等于纯 commit 数",27*sc,fy+30*sc);
+    g.fillStyle="#a67920";
+    g.fillText("#WorkBuddy  #Hy4   ·   耕年 Commit Field 3D",27*sc,fy+50*sc);
+    var a=document.createElement("a");
+    a.download="耕年-年度海报-"+form+".png"; a.href=c.toDataURL("image/png"); a.click();
+  }
+
+  /* ══ P1a 反事实时间轴 ══ */
+  function syncFormButtons(){
+    [].forEach.call(document.querySelectorAll("#formbar .mini"),function(b){
+      b.classList.toggle("on",b.dataset.f===form);
+    });
+  }
+  function syncMissionButtons(){
+    [].forEach.call(document.querySelectorAll("#missionbar .mini"),function(b){
+      b.classList.toggle("on",b.dataset.m===mission);
+    });
+  }
+  function updateEditBadge(){
+    var diff=0;
+    for(var i=0;i<DAYS;i++) if(counts[i]!==BASE[i]) diff++;
+    var b=document.getElementById("editBadge");
+    b.style.display=diff?"":"none";
+    b.textContent="改动 "+diff+" 天 · Δ"+(total-baseTotal>=0?"+":"")+(total-baseTotal);
+    ghostVisible=diff>0;
+  }
+  function toggleEdit(){
+    editMode=!editMode;
+    if(droneActive()) droneRecall("编辑年份已接管");
+    var e=document.getElementById("editBtn");
+    e.classList.toggle("on",editMode);
+    e.textContent=editMode?"✓ 完成编辑":"✎ 编辑年份";
+    document.getElementById("resetBtn").style.display=editMode?"":"none";
+    updateEditBadge(); dirty=true;
+  }
+  function resetYear(){
+    for(var i=0;i<DAYS;i++){ counts[i]=BASE[i]; levels[i]=IS_REAL?REAL.levels[i]:levelFor(BASE[i]); }
+    growth.fill(1); recompute(); updateEditBadge(); renderDetail(selected); dirty=true;
+  }
+  function drawGhosts(cm){
+    if(!ghostVisible||!editMode||form!=="pillar") return;
+    ctx.save(); ctx.setLineDash([3,3]); ctx.lineWidth=1.2;
+    for(var i=0;i<DAYS;i++){
+      if(BASE[i]===counts[i]) continue;
+      var X=wx(i),Z=wz(i),c=CELL;
+      var hb=Math.min(145,6+Math.sqrt(BASE[i])*9.5)*rise;
+      var q=[{x:X,y:hb,z:Z},{x:X+c,y:hb,z:Z},{x:X+c,y:hb,z:Z+c},{x:X,y:hb,z:Z+c}]
+        .map(function(p){return project(p,cm);});
+      poly(q); ctx.strokeStyle=counts[i]===0?"rgba(180,150,90,.8)":"rgba(60,130,90,.85)"; ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* ══ P1b 自叙事纪录片 ══ */
+  var doc={on:false,t:0,shots:[],idx:-1,cruiseWas:false};
+  var rec=null, recChunks=[];
+  function buildShots(){
+    var sc=streaks.length?streaks.reduce(function(a,b){return b[1]>a[1]?b:a;},streaks[0]):[0,0];
+    var gc=gaps.length?gaps.reduce(function(a,b){return b[1]>a[1]?b:a;},gaps[0]):[0,0];
+    var bi=0; for(var q=1;q<4;q++) if(actTotals[q]>actTotals[bi]) bi=q;
+    return [
+      {dur:8000,label:"Ⅰ · 开荒",text:"一年，从第一格开始。",yaw:0,elev:1.36,dist:2100,week:0,rise:0.15,form:"pillar"},
+      {dur:9000,label:"Ⅱ · 连成线",text:"连续 "+longest+" 天，田埂第一次没有断开。",yaw:-0.70,elev:0.62,dist:1900,week:Math.floor(sc[0]/7),rise:1,form:"pillar"},
+      {dur:8000,label:"Ⅲ · 空白",text:"然后，"+(gc[1]||0)+" 天没有动静，低地起了雾。",yaw:-0.30,elev:0.22,dist:1850,week:Math.floor(gc[0]/7),rise:1,form:"pillar"},
+      {dur:9000,label:"Ⅳ · 孤峰",text:fmt(dateOf(peakIdx))+"，"+peak+" 次贡献。全田只有它这么高。",yaw:-0.24,elev:0.18,dist:1700,week:Math.floor(peakIdx/7),rise:1,form:"pillar"},
+      {dur:8000,label:"Ⅴ · 盛长",text:ACTS[bi].name+"贡献 "+actTotals[bi]+" 次。",yaw:-0.90,elev:0.70,dist:2000,week:Math.ceil(bi*WEEKS/4),rise:1,form:"contour"},
+      {dur:8000,label:"Ⅵ · 另一种写法",text:"同一份数据，也可以是梯田、织物或年轮。",yaw:-0.50,elev:0.90,dist:2050,week:Math.floor(peakIdx/7),rise:1,form:"rings"},
+      {dur:10000,label:"Ⅶ · 收成",text:total.toLocaleString()+" 次贡献 · "+(IS_REAL?"github.com/hengxin":"演示数据"),yaw:0,elev:1.40,dist:2050,week:52,rise:1,form:"pillar"}
+    ];
+  }
+  function startRecording(){
+    rec=null; recChunks=[];
+    try{
+      if(!window.MediaRecorder||!cv.captureStream) throw new Error("unsupported");
+      var stream=cv.captureStream(30);
+      var mime=MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?"video/webm;codecs=vp9":"video/webm";
+      rec=new MediaRecorder(stream,{mimeType:mime});
+      rec.ondataavailable=function(e){ if(e.data&&e.data.size) recChunks.push(e.data); };
+      rec.onstop=function(){
+        if(!recChunks.length) return;
+        var blob=new Blob(recChunks,{type:"video/webm"});
+        var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+        a.download="耕年-60s纪录片.webm"; a.click();
+        setTimeout(function(){ URL.revokeObjectURL(a.href); },3000);
+      };
+      rec.start(200);
+    }catch(err){
+      rec=null;
+      exportPoster();
+      var cp=document.getElementById("docCaption");
+      cp.innerHTML="<b>录制降级</b>当前环境不支持画布录制，已改为导出年度海报。";
+      cp.classList.add("on");
+    }
+  }
+  function stopRecording(){ if(rec&&rec.state!=="inactive"){ try{rec.stop();}catch(e){} } rec=null; }
+  function docStart(record){
+    if(doc.on){ docStop(); return; }
+    if(droneActive()) droneRecall("纪录片已接管");
+    if(playing) stop();
+    editMode=false;
+    document.getElementById("editBtn").classList.remove("on");
+    document.getElementById("editBtn").textContent="✎ 编辑年份";
+    doc.shots=buildShots(); doc.t=0; doc.idx=-1; doc.on=true; doc.cruiseWas=cruise;
+    cruiseButton(false);
+    var db=document.getElementById("docBtn");
+    db.classList.add("on"); db.textContent="■ 停止纪录片";
+    if(record) startRecording();
+    dirty=true;
+  }
+  function docStop(){
+    if(!doc.on) return;
+    doc.on=false;
+    var db=document.getElementById("docBtn");
+    db.classList.remove("on"); db.textContent="▶ 60s 纪录片";
+    document.getElementById("docCaption").classList.remove("on");
+    cruiseButton(doc.cruiseWas);
+    stopRecording(); dirty=true;
+  }
+  function docUpdate(dt){
+    if(!doc.on) return;
+    doc.t+=Math.min(120,dt);
+    var acc=0, sh=null, idx=-1;
+    for(var k=0;k<doc.shots.length;k++){
+      if(doc.t<acc+doc.shots[k].dur){ sh=doc.shots[k]; idx=k; break; }
+      acc+=doc.shots[k].dur;
+    }
+    if(!sh){ docStop(); return; }
+    if(idx!==doc.idx){
+      doc.idx=idx;
+      var cp=document.getElementById("docCaption");
+      cp.innerHTML="<b>"+sh.label+"</b>"+sh.text; cp.classList.add("on");
+      form=sh.form; syncFormButtons();
+      camT.yaw=sh.yaw; camT.elev=sh.elev; camT.dist=sh.dist;
+      riseT=sh.rise; setWeek(sh.week,false);
+    }
+    var p=(doc.t-acc)/sh.dur;
+    camT.yaw=sh.yaw+Math.sin(p*Math.PI)*0.13;
+    dirty=true;
+    if(doc.t>=60000) docStop();
+  }
+
+  /* ══ P3 生成式生态 ══ */
+  function drawEco(cm){
+    if(!eco) return;
+    var leaf=["#9dc98f","#7fb774","#d6c06a","#c99a63"];
+    streaks.forEach(function(s){
+      if(s[1]<12) return;
+      var pts=[];
+      for(var k=s[0];k<s[0]+s[1];k++){
+        pts.push(project({x:wx(k)+CELL/2,y:heightOf(k)+7,z:wz(k)+CELL/2},cm));
+      }
+      ctx.beginPath();
+      pts.forEach(function(p,j){ if(j===0)ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); });
+      ctx.strokeStyle="rgba(60,120,75,.72)"; ctx.lineWidth=1.7; ctx.stroke();
+      for(var j=0;j<pts.length;j+=3){
+        ctx.fillStyle=leaf[actOf(Math.floor((s[0]+j)/7))];
+        ctx.beginPath(); ctx.ellipse(pts[j].x+4,pts[j].y-3,4,2.2,0.5,0,Math.PI*2); ctx.fill();
+      }
+    });
+    var grass=0;
+    for(var i=0;i<DAYS&&grass<150;i++){
+      if(counts[i]!==0||i%3!==0) continue;
+      var g=project({x:wx(i)+CELL/2,y:0,z:wz(i)+CELL/2},cm);
+      ctx.strokeStyle="rgba(150,160,110,.6)"; ctx.lineWidth=1;
+      for(var t=-1;t<=1;t++){
+        ctx.beginPath(); ctx.moveTo(g.x,g.y); ctx.lineTo(g.x+t*3,g.y-6-Math.abs(t)*2); ctx.stroke();
+      }
+      grass++;
+    }
+    var tp=project({x:wx(peakIdx)+CELL/2,y:heightOf(peakIdx),z:wz(peakIdx)+CELL/2},cm);
+    function branch(x,y,len,ang,d){
+      if(d>3||len<4) return;
+      var x2=x+Math.cos(ang)*len, y2=y+Math.sin(ang)*len;
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x2,y2);
+      ctx.strokeStyle="rgba(90,70,45,"+(0.85-d*0.15)+")"; ctx.lineWidth=3.2-d*0.7; ctx.stroke();
+      branch(x2,y2,len*0.7,ang-0.5,d+1); branch(x2,y2,len*0.7,ang+0.5,d+1);
+    }
+    branch(tp.x,tp.y,26,-Math.PI/2,0);
+  }
+  function dataView(){
+    form="pillar"; eco=false; riseT=1; showDike=true;
+    document.getElementById("ecoBtn").classList.remove("on");
+    document.getElementById("dikeBtn").textContent="隐藏田埂";
+    syncFormButtons(); setView("iso"); dirty=true;
+  }
+
+  /* ══ 命中检测 ══ */
+  function inPoly(x,y,pts){
+    var inside=false;
+    for(var i=0,j=pts.length-1;i<pts.length;j=i++){
+      var xi=pts[i].x,yi=pts[i].y,xj=pts[j].x,yj=pts[j].y;
+      if(((yi>y)!==(yj>y)) && (x<(xj-xi)*(y-yi)/(yj-yi)+xi)) inside=!inside;
+    }
+    return inside;
+  }
+  function hit(x,y){
+    for(var k=hitRegions.length-1;k>=0;k--){
+      var r=hitRegions[k];
+      for(var q=0;q<r.quads.length;q++) if(inPoly(x,y,r.quads[q])) return r.i;
+    }
+    return -1;
+  }
+
+  /* ══ 状态与控制 ══ */
+  var col=52, playing=false, raf=0, lastT=0, acc=0, dirty=true;
+
+  function applyAct(){
+    var a=ACTS[actOf(col)];
+    document.documentElement.style.setProperty("--act",a.act);
+    document.getElementById("actName").textContent=a.name;
+    document.getElementById("actNow").textContent=playing
+      ? "扫描线正在生长 · W"+(col+1)+" / 53" : "扫描线停在 W"+(col+1)+" · "+(col===52?"全年数据已铺满":"该周之后尚未生长");
+    document.getElementById("stage").style.background=a.bg;
+    [].forEach.call(actsEl.children,function(b){
+      var on=Number(b.dataset.act)===actOf(col);
+      b.classList.toggle("on",on); b.style.background=on?a.act:"";
+    });
+  }
+  function setWeek(w,regrow){
+    if(regrow&&droneActive()) droneAbort("时间轴已接管 · 巡航终止");
+    col=Math.max(0,Math.min(WEEKS-1,w));
+    document.getElementById("week").value=col;
+    document.getElementById("weekV").textContent="W"+(col+1)+" / 53";
+    if(regrow) for(var i=0;i<DAYS;i++) growth[i]=Math.floor(i/7)<=col?1:0;
+    cursor.style.left=((col+0.5)/WEEKS*100).toFixed(2)+"%";
+    applyAct(); dirty=true;
+  }
+  function jumpTo(w){ stop(); setWeek(w,true); }
+  function growColumn(c){ for(var r=0;r<7;r++){ var idx=c*7+r; if(idx<DAYS) growth[idx]=1; } }
+  function start(){
+    if(playing)return;
+    if(droneActive()) droneAbort("生长动画已接管 · 巡航终止");
+    if(col>=WEEKS-1){ col=0; growth.fill(0); }
+    playing=true; lastT=0; acc=0;
+    document.getElementById("playBtn").textContent="❚❚ 暂停";
+    document.getElementById("playBtn").classList.remove("primary");
+    setWeek(col,false);
+    dirty=true;
+  }
+  function stop(){
+    playing=false;
+    document.getElementById("playBtn").textContent=col>=WEEKS-1?"↻ 重新生长":"▶ 继续生长";
+    document.getElementById("playBtn").classList.add("primary");
+    applyAct(); dirty=true;
+  }
+  function setView(v){
+    viewMode=v;
+    var t=VIEWS[v];
+    if(t.yaw!==undefined){ camT.yaw=t.yaw; camT.elev=t.elev; camT.dist=t.dist; }
+    document.getElementById("viewLabel").textContent=t.label;
+    document.getElementById("viewSub").textContent=t.sub;
+    [].forEach.call(document.querySelectorAll(".viewbtn"),function(b){ b.classList.toggle("on",b.dataset.v===v); });
+    dirty=true;
+  }
+
+  function loop(t){
+    if(!lastT)lastT=t;
+    var dt=Math.min(120,t-lastT); lastT=t;
+    var changed=false;
+
+    /* 相机缓动 + 自动巡游 */
+    if(cruise&&!dragging&&viewMode!=="top") camT.yaw+=0.0016*(dt/16.7);
+    var dy=camT.yaw-cam.yaw, de=camT.elev-cam.elev, dd=camT.dist-cam.dist;
+    if(Math.abs(dy)>1e-5||Math.abs(de)>1e-5||Math.abs(dd)>0.1){
+      cam.yaw+=dy*0.09; cam.elev+=de*0.09; cam.dist+=dd*0.09; changed=true;
+    }
+    /* 立起 / 摊平 */
+    if(Math.abs(rise-riseT)>0.001){ rise+=(riseT-rise)*0.075; changed=true; }
+    /* 生长推进 */
+    if(playing){
+      acc+=dt;
+      var dur=ACTS[actOf(col)].pace;
+      while(acc>=dur&&col<WEEKS){
+        acc-=dur; col++; growColumn(col);
+        document.getElementById("week").value=col;
+        document.getElementById("weekV").textContent="W"+(col+1)+" / 53";
+        cursor.style.left=((col+0.5)/WEEKS*100).toFixed(2)+"%";
+        applyAct(); changed=true;
+      }
+      if(col>=WEEKS-1){ stop(); }
+    }
+    /* 无人机巡航：任何异常都安全召回，不破坏已播下的数据 */
+    try{ droneUpdate(dt); }catch(err){ droneAbort("巡航异常，已安全召回"); }
+    try{ docUpdate(dt); }catch(err){ docStop(); }
+    if(changed||dirty||cruise){ draw(); dirty=false; }
+    frameCount++;
+    if(t-fpsT>1000){ fps=Math.round(frameCount*1000/(t-fpsT)); frameCount=0; fpsT=t;
+      document.getElementById("fps").textContent=fps+" FPS · "+DAYS+" COLUMNS"; }
+    raf=requestAnimationFrame(loop);
+  }
+
+  /* ══ DOM 交互 ══ */
+  document.getElementById("playBtn").addEventListener("click",function(){ playing?stop():start(); });
+
+  /* 第二控制条：形态 / 任务 / 反事实 / 纪录片 / 生态 / 导出 */
+  var formbar=document.getElementById("formbar");
+  Object.keys(FORMS).forEach(function(k){
+    var b=document.createElement("button"); b.className="mini"; b.dataset.f=k; b.textContent=FORMS[k].label;
+    b.addEventListener("click",function(){
+      form=k; syncFormButtons();
+      var v=FORM_VIEW[k];
+      if(v&&!doc.on){ camT.elev=v.elev; camT.dist=v.dist; }
+      dirty=true;
+    });
+    formbar.appendChild(b);
+  });
+  var missionbar=document.getElementById("missionbar");
+  Object.keys(MISSIONS).forEach(function(k){
+    var b=document.createElement("button"); b.className="mini"; b.dataset.m=k; b.textContent=MISSIONS[k].label;
+    b.addEventListener("click",function(){
+      if(droneActive()) droneRecall("任务已切换");
+      mission=k; syncMissionButtons(); dirty=true;
+    });
+    missionbar.appendChild(b);
+  });
+  syncFormButtons(); syncMissionButtons();
+  document.getElementById("editBtn").addEventListener("click",toggleEdit);
+  document.getElementById("resetBtn").addEventListener("click",resetYear);
+  document.getElementById("ecoBtn").addEventListener("click",function(){
+    eco=!eco; this.classList.toggle("on",eco); dirty=true;
+  });
+  document.getElementById("dataViewBtn").addEventListener("click",dataView);
+  document.getElementById("posterBtn").addEventListener("click",exportPoster);
+  document.getElementById("docBtn").addEventListener("click",function(){ docStart(false); });
+  document.getElementById("recordBtn").addEventListener("click",function(){ docStart(true); });
+  droneBtn.addEventListener("click",function(){ droneStart(); });
+  document.addEventListener("visibilitychange",function(){
+    if(document.hidden){
+      if(drone.mode==="takeoff"||drone.mode==="seeding"){
+        drone.pausedFrom=drone.mode; drone.mode="paused"; renderDroneCard();
+      }
+    }else if(drone.mode==="paused"){
+      drone.mode=drone.pausedFrom; lastT=0; dirty=true; renderDroneCard();
+    }
+  });
+  document.getElementById("riseBtn").addEventListener("click",function(){
+    riseT=riseT>0.5?0:1;
+    var flat=riseT<0.5;
+    this.textContent=flat?"▤ 立起为立体田":"▥ 摊平为记录面";
+    this.classList.toggle("on",!flat);
+    setView(flat?"top":"iso");
+    dirty=true;
+  });
+  document.getElementById("week").addEventListener("input",function(){ stop(); setWeek(Number(this.value),true); });
+  document.getElementById("dikeBtn").addEventListener("click",function(){
+    showDike=!showDike; this.textContent=showDike?"隐藏田埂":"显示田埂"; dirty=true;
+  });
+  document.getElementById("cruiseBtn").addEventListener("click",function(){
+    cruise=!cruise; this.textContent=cruise?"◌ 巡游中":"◌ 已暂停";
+    this.classList.toggle("on",cruise); dirty=true;
+  });
+  [].forEach.call(document.querySelectorAll(".viewbtn"),function(b){
+    b.addEventListener("click",function(){ setView(b.dataset.v); });
+  });
+  [].forEach.call(document.querySelectorAll("#srcsw button"),function(b){
+    b.classList.toggle("on",b.dataset.src===(IS_REAL?"real":"demo"));
+    b.addEventListener("click",function(){ location.hash=b.dataset.src; location.reload(); });
+  });
+
+  /* Canvas 拖拽 / 滚轮 / 悬停 / 点击 */
+  cv.addEventListener("pointerdown",function(e){
+    dragging=true; dragMoved=0; lastX=e.clientX; lastY=e.clientY;
+    cruise=false;
+    var cb=document.getElementById("cruiseBtn");
+    cb.textContent="◌ 已暂停"; cb.classList.remove("on");
+    try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+  });
+  cv.addEventListener("pointermove",function(e){
+    if(dragging){
+      camT.yaw+=(e.clientX-lastX)*0.006;
+      dragMoved+=Math.abs(e.clientX-lastX)+Math.abs(e.clientY-lastY);
+      camT.elev=Math.max(0.06,Math.min(1.50,camT.elev+(e.clientY-lastY)*0.004));
+      lastX=e.clientX; lastY=e.clientY;
+      viewMode="free";
+      document.getElementById("viewLabel").textContent=VIEWS.free.label;
+      document.getElementById("viewSub").textContent=VIEWS.free.sub;
+      [].forEach.call(document.querySelectorAll(".viewbtn"),function(b){ b.classList.toggle("on",b.dataset.v==="free"); });
+      dirty=true;
+      tip.classList.remove("on");
+      return;
+    }
+    var r=cv.getBoundingClientRect(), x=e.clientX-r.left, y=e.clientY-r.top;
+    var hi=hit(x,y);
+    if(hi!==hover){ hover=hi; dirty=true; }
+    if(hi<0){ tip.classList.remove("on"); return; }
+    var d=dateOf(hi);
+    tip.innerHTML='<b>'+fmt(d)+' · '+DOW[hi%7]+'</b><br>贡献 <b>'+counts[hi]+'</b> 次　<i>'+stateOf(hi)+'</i><br>'+
+      '<i>W'+(Math.floor(hi/7)+1)+' · 柱高 '+baseH(hi).toFixed(0)+' 单位</i>';
+    var tx=e.clientX+14, ty=e.clientY+14;
+    if(tx+240>window.innerWidth)tx=e.clientX-240;
+    if(ty+92>window.innerHeight)ty=e.clientY-92;
+    tip.style.left=tx+"px"; tip.style.top=ty+"px"; tip.classList.add("on");
+  });
+  cv.addEventListener("pointerup",function(e){ dragging=false; try{cv.releasePointerCapture(e.pointerId);}catch(err){} });
+  cv.addEventListener("pointerleave",function(){ dragging=false; hover=-1; tip.classList.remove("on"); dirty=true; });
+  cv.addEventListener("wheel",function(e){
+    e.preventDefault();
+    camT.dist=Math.max(1200,Math.min(3200,camT.dist+e.deltaY*1.4));
+    dirty=true;
+  },{passive:false});
+  cv.addEventListener("click",function(e){
+    if(dragMoved>4) return;
+    var r=cv.getBoundingClientRect();
+    var hi=hit(e.clientX-r.left,e.clientY-r.top);
+    if(hi>=0){
+      selected=hi;
+      if(editMode){
+        counts[hi]=counts[hi]>0?0:Math.max(1,BASE[hi]||1);
+        levels[hi]=levelFor(counts[hi]);
+        recompute(); updateEditBadge();
+      }
+      renderDetail(hi); dirty=true;
+    }
+  });
+  document.addEventListener("keydown",function(e){
+    if(e.key==="ArrowLeft"){ stop(); setWeek(col-1,true); }
+    if(e.key==="ArrowRight"){ stop(); setWeek(col+1,true); }
+    if(e.key===" "){ e.preventDefault(); playing?stop():start(); }
+    if(e.key==="1")setView("top");
+    if(e.key==="2")setView("iso");
+    if(e.key==="3")setView("horizon");
+    if(e.key.toLowerCase()==="r")setView("iso");
+    if(e.key.toLowerCase()==="d")droneStart();
+    if(e.key.toLowerCase()==="e")toggleEdit();
+    if(e.key.toLowerCase()==="p")exportPoster();
+  });
+
+  /* ══ 详情 / 元数据 ══ */
+  var tip=document.getElementById("tip"), detail=document.getElementById("detail");
+  function stateOf(i){
+    var c=counts[i];
+    if(c===0)return "休耕 · 无贡献";
+    if(c<=2)return "萌发 · 稀疏";
+    if(c<=5)return "生长 · 稳定";
+    if(c<=9)return "盛长 · 高频";
+    return "收成 · 峰值";
+  }
+  function inLongest(i){ return streaks.some(function(s){ return s[1]===longest&&i>=s[0]&&i<s[0]+s[1]; }); }
+  function renderDetail(i){
+    var d=dateOf(i), c=counts[i], a=ACTS[actOf(Math.floor(i/7))];
+    detail.innerHTML='<div class="big">'+String(c).padStart(2,"0")+'</div>'+
+      '<div class="dl"><b>'+fmt(d)+' · '+DOW[i%7]+'</b>　<em>W'+(Math.floor(i/7)+1)+'</em><br>'+
+      '状态：'+stateOf(i)+'　·　柱高 '+baseH(i).toFixed(0)+' 单位<br>'+
+      '所属：'+a.name+'<br>'+
+      (inLongest(i)?'<b style="color:#a67920">✦ 落在最长连续记录（'+longest+' 天）之内</b>':'未落入最长连续段')+
+      '</div>';
+  }
+
+  function renderMeta(){
+    document.getElementById("plateDays").textContent=DAYS+" DAYS";
+    document.getElementById("sourceLine").innerHTML=IS_REAL
+      ? '数据源：<b>github.com/hengxin</b> · GitHub 贡献日历 '+REAL.from+' → '+REAL.to+
+        ' · 2026-11-07 抓取 · 共 '+REAL.header_total.toLocaleString()+' 次贡献（与主页自报数字一致）'
+      : '数据源：<b>确定性演示数据集</b> · 2025-11-02 → 2026-11-07 · 371 天 · 非真实仓库';
+    document.getElementById("unitLabel").textContent=IS_REAL?"贡献数（GitHub 原生分档）":"贡献数";
+    document.getElementById("levelLegend").innerHTML=bounds.map(function(b,idx){
+      var t=idx===0?"0":(IS_REAL?(b[0]===b[1]?String(b[0]):b[0]+"–"+b[1]):(idx===4?"10+":b[0]+"–"+b[1]));
+      return '<span class="keys"><i class="sw" style="background:'+LEVELS[idx]+'"></i>'+t+'</span>';
+    }).join("");
+    document.getElementById("peakNum").textContent=peak;
+    document.getElementById("peakDate").textContent=fmt(dateOf(peakIdx))+" · 全田孤峰";
+    document.getElementById("peakHud").textContent="最高峰 · "+peak+" 次贡献";
+    document.getElementById("footData").innerHTML=IS_REAL
+      ? '<b>关于数据：</b>当前为 <b>github.com/hengxin 的真实 GitHub 贡献日历</b>（'+REAL.from+' → '+REAL.to+
+        '，'+DAYS+' 天，2026-11-07 抓取）。每日数值取自贡献格 tool-tip 逐日解析，求和 '+
+        total.toLocaleString()+' 次，与 GitHub 页面自报的 '+REAL.header_total.toLocaleString()+
+        ' 一致'+(total!==REAL.header_total?'（当前已编辑为 '+total.toLocaleString()+'）':'')+
+        '；色阶使用该账号的 <b>GitHub 原生分档</b>。注意 contributions 含提交、PR、issue 与 review，'+
+        '<b>不等于纯 commit 数</b>；末列只有 6 格，因该周六尚未计入 GitHub 日历。'
+      : '<b>关于数据：</b>本页使用一份确定性生成的<b>演示数据集</b>（371 天，2025-11-02 → 2026-11-07），'+
+        '注入了连续 42 天的活跃区段、两段休耕期与四个活跃高峰；不代表任何真实仓库的贡献历史。';
+  }
+
+  /* ══ 初始化 ══ */
+  recompute();
+  selected=IS_REAL?peakIdx:20*7+3;   /* peakIdx 由 recompute 计算，需在其后重设 */
+  updateEditBadge();
+  resize();
+  setView("iso");
+  setWeek(52,false);
+  renderDetail(selected);
+  if(window.ResizeObserver) new ResizeObserver(function(){ resize(); dirty=true; }).observe(vp);
+  else window.addEventListener("resize",function(){ resize(); dirty=true; });
+  renderDroneCard();
+  raf=requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

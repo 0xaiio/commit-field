@@ -1,0 +1,48 @@
+# CommitField — 单文件、零依赖、无构建步骤的静态页面仓库
+# 不忽略仓库内的 4 个 .html 源文件：它们都是作品本体或有意保留的历史快照。
+
+# ── 操作系统与编辑器产生的临时文件 ──
+.DS_Store
+.AppleDouble
+Thumbs.db
+desktop.ini
+*~
+*.swp
+*.swo
+*.tmp
+*.temp
+*.log
+
+# ── 本地环境配置与凭据（本项目不需要，用于防误提交）──
+.env
+.env.*
+!.env.example
+*.local
+.vscode/
+.idea/
+
+# ── 依赖与构建缓存（本项目零依赖、无构建步骤，用于防误生成）──
+node_modules/
+dist/
+build/
+out/
+.cache/
+.parcel-cache/
+.vite/
+coverage/
+__pycache__/
+*.pyc
+
+# ── 页面运行时由浏览器下载的导出产物，不是源码 ──
+耕年-年度海报-*.png
+耕年-60s纪录片.webm
+*.webm
+*.crdownload
+*.part
+
+# ── 后续本地临时快照；仓库中已存在的两份 -backup / -pre-account 快照
+#    是有意纳入版本控制的历史对照版本，不在此规则内。
+*.bak
+*.orig
+*.rej
+*.patch
